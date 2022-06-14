@@ -181,3 +181,204 @@ AGENDA
     c. Build a linear model
   
     d. See if the linear model is predictive using test and train splits
+    
+
+```
+
+library(lubridate)
+
+demo_Chopped %>%
+  filter(!is.na(episode_rating)) %>%
+  mutate(air_year = year(air_date) %>% factor()) %>%
+  ggplot(aes(series_episode, episode_rating)) +
+    theme_classic() +
+    geom_point(aes(color = air_year), size = 2) +
+#    geom_line(aes(color = air_year), size = 1)
+  geom_smooth(method = "loess", se = FALSE, formula = "y ~ x")
+
+```
+
+```
+
+# separate_rows is similar to SQL's STRING_SPLIT function
+# This creates every combo of ingredient per episode
+Chopped_Step1 = demo_Chopped %>%
+  separate_rows(appetizer, sep = ",") %>%
+  separate_rows(entree, sep = ",") %>%
+  separate_rows(dessert, sep = ",") %>%
+  mutate(appetizer = str_trim(appetizer),
+         entree = str_trim(entree),
+         dessert = str_trim(dessert))
+
+# Collapse the ingredients per course into ONE ingredient column
+# and remove all possible combinations to just the unique ones with distinct
+Chopped_Step2 = bind_rows(
+  Chopped_Step1 %>%
+    mutate(ingredient = appetizer) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge1, judge2, judge3, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step1 %>%
+    mutate(ingredient = entree) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge1, judge2, judge3, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step1 %>%
+    mutate(ingredient = dessert) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge1, judge2, judge3, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient)) %>%
+  distinct() %>%
+  arrange(series_episode)
+# pivot_longer() would accomplish this in fewer lines of code but its' more opaque
+
+# Collapse Judges into one column
+Chopped_Step3 = bind_rows(
+  Chopped_Step2 %>%
+    mutate(judge = judge1) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step2 %>%
+    mutate(judge = judge2) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step2 %>%
+    mutate(judge = judge3) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient)) %>%
+  arrange(series_episode)
+
+# Collapse Contestants into one column
+# Now each row is each episode with a row per unique ingredient, judge and contestant
+Chopped_Ratings = bind_rows(
+  Chopped_Step3 %>%
+    mutate(contestant = contestant1) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient),
+  Chopped_Step3 %>%
+    mutate(contestant = contestant2) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient),
+  Chopped_Step3 %>%
+    mutate(contestant = contestant3) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient),
+  Chopped_Step3 %>%
+    mutate(contestant = contestant4) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient)) %>%
+  arrange(series_episode)
+
+```
+
+**Which Judges are on Higher Rated Episodes**
+
+Reducing Judges
+  - Filter to certain year or season?
+```
+
+Chopped_Ratings %>%
+  filter(!is.na(episode_rating)) %>%
+  dplyr::select(series_episode, judge, episode_rating) %>%
+  distinct() %>%
+  group_by(judge) %>%
+  mutate(judge = factor(judge),
+         AppearanceCount = n(),
+         AvgRating = median(episode_rating)) %>%
+  filter(AppearanceCount >= 10) %>%
+    ggplot(aes(reorder(judge, desc(AvgRating)), episode_rating)) +
+      geom_boxplot() +
+      geom_jitter(width = 0.2, color = "grey") +
+      coord_flip() +
+      theme_classic() +
+      labs(title = "Chopped - Judges by Ratings",
+           x = "Judge", y = "IMDB Rating")
+  
+
+
+```
+
+```
+
+demo_ScoobyDoo %>%
+  filter(!is.na(imdb)) %>%
+  filter(imdb > 0) %>%
+  mutate(air_year = year(date_aired) %>% factor()) %>%
+  ggplot(aes(index, imdb)) +
+    theme_classic() +
+    geom_point(aes(color = air_year), size = 2) +
+    geom_smooth(method = "loess", se = FALSE, formula = "y ~ x") +
+    theme(legend.position = "bottom")
+
+```
+
+```
+
+demo_ScoobyDoo %>%
+  filter(monster_real %in% c("TRUE", "FALSE")) %>%
+  mutate(monster_real = factor(monster_real, levels = c("TRUE", "FALSE"))) %>%
+  ggplot(aes(monster_real, imdb)) +
+    geom_boxplot() +
+    coord_flip() +
+    theme_classic() +
+  labs(title = "Are Real or Fake Monsters More Highly Rated?",
+       y = "IMDB Rating", x = "Real Monster?")
+
+```
+
+```
+
+demo_ScoobyDoo %>%
+  filter(!is.na(number_of_snacks)) %>%
+  ggplot(aes(factor(number_of_snacks), imdb)) +
+    geom_boxplot(na.rm = TRUE) +
+    theme_classic() +
+  labs(title = "What's the relationship between Scooby Snack consumption and rating?",
+       y = "IMDB Rating", x = "Scooby Snack Count")
+
+
+```
+```
+
+demo_ScoobyDoo %>%
+  filter(!is.na(monster_type)) %>%
+  filter(!monster_type == "NULL") %>%
+  group_by(monster_type) %>%
+  summarize(n = n(), .groups = "drop") %>%
+  filter(n >= 5) %>%
+  ggplot(aes(reorder(monster_type, n), n)) +
+    geom_col() +
+    theme_classic() +
+    coord_flip() +
+    labs(title = "Most Common Monster Types",
+         x = "Monster Type", y = "Appearances")
+
+```
+
+```
+
+Billboard_DF = demo_BillboardRank %>%
+  dplyr::select(-c(song, performer)) %>%
+  inner_join(demo_BillboardFeatures, by = c("song_id" = "song_id")) %>%
+  filter(!is.na(spotify_track_popularity))
+
+NumberOnes_DF = Billboard_DF %>%
+  filter(week_position == 1) %>%
+  group_by(song_id, performer, song, spotify_track_popularity, spotify_genre, mode, danceability, valence) %>%
+  summarize(WeeksAt1 = n(), .groups = "drop")
+
+NumberOnes_LM = lm(WeeksAt1 ~ danceability, data = NumberOnes_DF)
+
+```
+
+```
+NumberOnes_LM
+
+# What this means
+# WeeksAt1 = 2.279 X danceability + 1.485
+
+```
+
+```
+
+summary(NumberOnes_LM)
+
+```
+
