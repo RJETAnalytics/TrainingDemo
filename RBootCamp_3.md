@@ -1,5 +1,14 @@
 # R Boot Camp Session 3
 
+This class is for people who are new to R but also:
+
+- Have intermediate to expert skills in Excel
+- Are familiar with basic to intermediate statistics
+- Have basic to intermediate skills in some programming language
+
+We will generally be following "R For Data Science" at: https://r4ds.had.co.nz/ which is a much better comprehensive guide than this class.
+
+This class will skip some concepts and accelerate you through this book covering about 50% of what is there.  I advise going back and skimming through the things that do not look familiar as they will absolutely come up later in your R journey.
 
 **Clear Memory and Load Packages**
 ```
