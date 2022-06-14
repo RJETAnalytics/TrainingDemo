@@ -1,0 +1,362 @@
+# DAY 2 
+
+
+*Code to clear the environment and unload all packages*
+```{r}
+
+# Optional memory clear
+rm(list=ls())
+# Disable Scientific Notation in printing
+options(scipen=999)
+# Unload All Packages
+lapply(names(sessionInfo()$otherPkgs), function(pkgs)
+  detach(
+    paste0('package:', pkgs),
+    character.only = T,
+    unload = T,
+    force = T
+  ))
+
+library(tidyverse)
+
+```
+
+*Load up our prior lessons*
+```{r}
+
+SaveFile = "C:\\Users\\Chris.Woolery\\OneDrive - Republic Airways\\Documents\\2022\\R Boot Camp 2022 V2.RDATA"
+load(SaveFile)
+
+```
+
+```{r}
+
+CarsDF_4Cyl = CarsDF %>%
+  filter(cyl == 4)
+
+```
+
+**Save a single variable**
+```{r}
+
+SaveFile = "C:\\Users\\Chris.Woolery\\OneDrive - Republic Airways\\Documents\\2022\\R Boot Camp 2022 V1 - 4CYL.RDATA"
+
+saveRDS(CarsDF_4Cyl, SaveFile)
+
+rm(CarsDF_4Cyl, CarsDF)
+
+CarsDF_4Cyl = readRDS(SaveFile)
+
+```
+
+**Row Names versus columns**
+```{r}
+
+data(mtcars)
+rm(mtcars)
+
+CarsDF <- mtcars
+
+```
+
+```{r}
+# Usually we don't use the row.name functionality in data frames
+# You can get rid of it like this
+CarsDF <- CarsDF %>%
+  mutate(model = row.names(.)) %>%
+  select(model, everything())
+
+```
+
+```{r}
+# But dplyr added a specific function to make it easy
+
+CarsDF <- CarsDF %>%
+  rownames_to_column("model")
+
+```
+
+```{r}
+# Let's also discuss how we can address specific rows and columns by position if needed
+# Dataframe[Row, Column] will give you a specific "Cell"
+# You can use ranges for Row or Column like 1:10 or leave it blank so Dataframe[1:10,] will give you all columns but just the first 10 rows
+
+CarsDF[2,2]
+
+CarsDF[1:10,]
+
+CarsDF[,3]
+
+CarsDF$cyl[3]
+
+```
+
+One note about tidyverse data frames.  They are tidy tables or tibbles
+According to tidyverse.org
+"Tibbles are data frames that are lazy and surly"
+https://tibble.tidyverse.org/
+They don't automatically change data types and complain more when things are wrong
+If you test the data class on an object and it's a "tbl" or "tbl_df you'll know why
+tibbles are syntactically easier and work best inside the tidyverse
+back to a data frame which is very simple with tibble(), data.frame()
+
+```{r}
+
+x <- tibble(CarsDF)
+class(x)
+x <- data.frame(x)
+class(x)
+
+```
+
+In this context let's talk about loading data in from four common sources
+
+**Excel**
+I'll send you this spreadsheet of Lift Landings for Winter Operations
+```{r}
+
+library(readxl)
+
+LandingsFile = "C:\\Users\\Chris.Woolery\\OneDrive - Republic Airways\\Documents\\2022\\VUJ Stanley County Landings.xlsx"
+# VUJLandings
+LandingsDF = read_excel(LandingsFile, sheet = "VUJLandings")
+```
+
+
+**CSV**
+```{r}
+
+demo_Hotels <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-11/hotels.csv')
+
+```
+
+
+**TSV**
+```{r}
+
+demo_Chopped <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-25/chopped.tsv')
+
+CharTable = tibble::tribble(
+   ~Source,  ~Translated,
+     "Á", "A",
+     "Â", "A",
+     "Ã", "A",
+     "Ä", "A",
+     "Å", "A",
+     "Æ", "A",
+     "Ç", "C",
+     "È", "E",
+     "É", "E",
+     "Ê", "E",
+     "Ë", "E",
+     "Ì", "I",
+     "Í", "I",
+     "Î", "I",
+     "Ï", "I",
+     "Ð", "G",
+     "Ñ", "N",
+     "Ò", "O",
+     "Ó", "O",
+     "Ô", "O",
+     "Õ", "O",
+     "Ö", "O",
+     "×", "X",
+     "Ø", "T",
+     "Ù", "U",
+     "Ú", "U",
+     "Û", "U",
+     "Ü", "U",
+     "Ý", "Y",
+     "Þ", "b",
+     "ß", "b",
+     "à", "a",
+     "á", "a",
+     "â", "a",
+     "ã", "a",
+     "ä", "a",
+     "å", "a",
+     "æ", "a",
+     "ç", "c",
+     "è", "e",
+     "é", "e",
+     "ê", "e",
+     "ë", "e",
+     "ì", "i",
+     "í", "i",
+     "î", "i",
+     "ï", "i",
+     "ð", "o",
+     "ñ", "n",
+     "ò", "o",
+     "ó", "o",
+     "ô", "o",
+     "õ", "o"
+     )
+
+CharTable = tibble(
+  Source = paste(CharTable$Source, collapse = ""),
+  Translated = paste(CharTable$Translated, collapse = ""),
+)
+
+demo_Chopped = demo_Chopped %>%
+  mutate(air_date = as.Date(air_date, format = "%B %d, %Y")) %>%
+  mutate_if(is.character, function(x) chartr(CharTable$Source, CharTable$Translated, x))
+
+```
+
+
+**SQL Server Database**
+```{r}
+
+library(odbc)
+library(DBI)
+
+DBADEV2016 <- dbConnect(odbc(), 
+                        Driver = "SQL Server", 
+                        Server = "DBADEV2016", 
+                        Database = "finanalytics", 
+                        Trusted_Connection = "True")
+
+# dbGetQuery returns the results from a query to the connection you specify
+demo_ScoobyDoo = dbGetQuery(DBADEV2016,
+"
+SELECT * FROM demo_ScoobyDoo
+"
+)
+# The tab and spacing format is not required; this could have been written as
+# demo_ScoobyDoo = dbGetQuery(DBADEV2016, "SELECT * FROM demo_ScoobyDoo")
+# but I like to use this format in the case of really long SQL Statements
+
+
+
+```
+
+
+```{r}
+
+# Now that you have a data frame we can do some summary type things with it
+# Summarize it
+summary(LandingsDF)
+
+# Look at count of unique values
+unique(LandingsDF$FullName) %>% length()
+unique(LandingsDF$State) %>% length()
+unique(LandingsDF$FullLessonName) %>% length()
+
+
+```
+
+
+```{r}
+# Dates
+# Date and POSIXct (date time)
+
+DateFromCharacter = c("2021-01-01", "2021-07-01", "2022-01-01")
+DateFromCharacter = as.Date(DateFromCharacter)
+
+# Quick Date Math
+x = difftime(DateFromCharacter[2], DateFromCharacter[1], unit = "days") %>% as.numeric()
+difftime(DateFromCharacter[1], DateFromCharacter[2], unit = "days")
+
+class(x)
+
+```
+
+
+```{r}
+# Emma; how can I get diff in months or quarters?
+# Chris Answer : I think the lubridate package will do it
+#   https://www.rstudio.com/resources/cheatsheets/
+
+library(lubridate)
+quarter(DateFromCharacter)
+# More research needed but it's definitely possible
+# From : https://stackoverflow.com/questions/38042910/adding-quarters-to-r-date
+# You can't add quarters but you can add months.  This will probably address most use cases
+StartingDate = as.Date("2018-01-15")
+# Add 7 quarters?  That's essentially 7 * 3 = 21 months!
+EndingDate = StartingDate + months(21)
+EndingDate
+# What if you really wanted the beginning of the quarter that is 7 quarters from now?
+PeriodRequested = "month"
+floor_date(StartingDate + months(22), unit = PeriodRequested)
+# What about the beginning of the next quarter
+ceiling_date(StartingDate + months(21), unit = "month")
+
+```
+
+
+```{r}
+
+# Logan; how does R store dates
+as.numeric(as.Date("1970-01-01"))
+
+```
+
+
+```{r}
+
+# Current Date
+Sys.Date()
+# Current Time
+Sys.time()
+
+```
+
+**Factors**
+```{r}
+# Factors
+FruitTypes <- c("banana", "apple", "watermellon", "pear") %>%
+  factor()
+
+# Levels default to alphabetical order
+levels(FruitTypes)
+FruitTypes[2] %>% as.numeric()
+
+
+FruitPreference = tibble(
+  Name = c("Chris", "Andrew", "Tommy", "Kat"),
+  Preference = c("apple", "apple", "watermellon", "pear") %>% factor(levels = FruitTypes)
+)
+
+
+```
+
+
+**Lists**
+Are combinations of other data types and objects
+They don't have to be the same type to be a part of the list
+They don't have to be the same length to be a part of the list
+https://r4ds.had.co.nz/vectors.html?q=lists#visualising-lists
+
+```{r}
+
+FruitTypes
+DateFromCharacter
+
+ListOfStuff = list(FruitTypes, DateFromCharacter, CarsDF)
+ListOfStuff[[1]]
+ListOfStuff[[2]]
+ListOfStuff[[3]]
+class(ListOfStuff)
+
+GimmeTheDF = ListOfStuff[[3]] %>%
+  as.data.frame()
+
+```
+
+
+# This can be useful in loops
+```{r}
+
+for (i in 1:nrow(CarsDF)) {
+  print(CarsDF$model[i])
+}
+
+```
+
+
+
+#
+# END OF DAY 2  
+#
