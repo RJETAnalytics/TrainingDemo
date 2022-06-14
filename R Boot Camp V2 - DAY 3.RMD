@@ -17,7 +17,7 @@ We will generally be following "R For Data Science" at: https://r4ds.had.co.nz/ 
 This class will skip some concepts and accelerate you through this book covering about 50% of what is there.  I advise going back and skimming through the things that do not look familiar as they will absolutely come up later in your R journey.
 
 
-# DAY 3  
+# DAY 3 
 ```{r}
 
 # Optional memory clear
