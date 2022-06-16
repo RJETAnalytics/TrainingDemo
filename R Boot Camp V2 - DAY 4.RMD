@@ -111,9 +111,28 @@ AGENDA
 1. Billboard
 
     a. Join our rank and features data and filter to relevant columns
+    
     b. Explore the data and visualize
+    
     c. Build a linear model
+    
     d. See if the linear model is predictive using test and train splits
+    
+    
+2. Discuss Other Model Types
+
+    a. AOV
+    
+    b. Classification versus Regression
+    
+    c. Logistic Regression
+    
+    d. Tree Models
+    
+    e. 
+    
+    
+3. Missed Concepts
 
 ```{r}
 
@@ -172,6 +191,19 @@ NumberOnes_DF %>%
 
 ```
 
+We can store the model object
+```{r}
+
+SaveFile = "C:\\Users\\Chris.Woolery\\OneDrive - Republic Airways\\Documents\\2022\\NumberOnes_LM.RDATA"
+
+saveRDS(NumberOnes_LM, SaveFile)
+
+x = readRDS(SaveFile)
+
+```
+
+
+
 We can plot the residuals (error between predicted and actual) ourselves to see what the bias in the variance is
 
 ```{r}
@@ -189,6 +221,7 @@ plot(NumberOnes_LM)
 ```
 
 ```{r}
+
 library(caret)
 
 set.seed(46143)
@@ -201,14 +234,27 @@ Popularity_DF = NumberOnes_DF %>%
   dplyr::relocate(c(RowID, SetName), .before = everything()) %>%
   filter(complete.cases(.))
 
+Popularity_DF %>%
+  filter(SetName == "Train") %>%
+  pull(spotify_track_popularity) %>%
+  summary()
+
 ```
 
 ```{r}
+Popularity_DF %>%
+  filter(SetName == "Test") %>%
+  pull(spotify_track_popularity) %>%
+  summary()
+```
 
-Popularity_DF_Train = NumberOnes_DF %>%
+
+```{r}
+
+Popularity_DF_Train = Popularity_DF %>%
   filter(SetName == "Train")
 
-Popularity_DF_Test = NumberOnes_DF %>%
+Popularity_DF_Test = Popularity_DF %>%
   filter(SetName == "Test")
 
 ```
@@ -220,6 +266,7 @@ Let's introduce the concept of [cross validation](https://en.wikipedia.org/wiki/
 
 set.seed(46143)
 pop.cv.folds <- createMultiFolds(Popularity_DF_Train$spotify_track_popularity, k = 5, times = 4)
+
 pop.cv.cntrl <- trainControl(method = "repeatedcv", number = 5,
                          repeats = 4, index = pop.cv.folds)
 
@@ -247,7 +294,21 @@ Popularity_DF_Test = Popularity_DF_Test %>%
       mutate(Pred = predict(Popularity_LM$finalModel, Popularity_DF_Test),
              Err = Pred - spotify_track_popularity,
              AbsErr = abs(Err))
+
+Popularity_DF_Train = Popularity_DF_Train %>%
+      mutate(Pred = Popularity_LM$finalModel$fitted.values,
+             Err = Pred - spotify_track_popularity,
+             AbsErr = abs(Err))
+
+ResultDF = bind_rows(Popularity_DF_Test, Popularity_DF_Train)
+
 ```
+
+```{r}
+  Popularity_DF_Test$Pred %>% summary()
+
+```
+
 
 ```{r}
 
@@ -255,18 +316,61 @@ Popularity_DF_Test %>%
   ggplot(aes(Pred, spotify_track_popularity)) +
     geom_point(aes(color = AbsErr)) + 
     scale_color_gradient(low = "grey", high = "red") +
+#    scale_x_continuous(limits = c(1,100)) +
     theme_classic()
 
 ```
 
 
 ```{r}
+
 Summary_PopTest = Popularity_DF_Test %>%
   group_by(SetName) %>%
-  summarize(MAE = mean(Err),
-            MAPE = mean(AbsErr),
+  summarize(MAE = mean(abs(Err)),
             .groups = "drop")
-  
+
+Summary_PopTest  
+
+```
+```{r}
+
+ScoobyAOV = aov(imdb ~ monster_real + monster_amount + monster_type,
+                           data = demo_ScoobyDoo %>%
+                              mutate(monster_type = factor(monster_type)))
+
+ScoobyAOV %>% summary()
+
 
 ```
 
+Flow Control if ... else
+
+```{r}
+Cheater = "Larry"
+
+if (Cheater == "Moe") {
+  print("Moe Cheated")
+} else {
+  if (Cheater == "Larry") {
+    print ("Larry Cheated") 
+} else {
+    print ("It was some other stoodge")
+  }
+}
+```
+
+Variable assignment with case ... when
+```{r}
+TestDF = tibble(
+  Note = case_when(
+    Cheater == "Moe" ~ "Moe Cheated",
+    Cheater == "Larry" ~ "Larry Cheated",
+    TRUE ~ "It was some other stoodge"
+  )
+)
+
+TestDF
+
+```
+
+END
