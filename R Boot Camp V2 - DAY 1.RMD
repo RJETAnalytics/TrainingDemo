@@ -4,7 +4,6 @@ author: "Chris Woolery"
 output:
   html_document:
     df_print: paged
-    code_folding: hide      
 ---
 
 This class is for people who are new to R but also:
@@ -308,7 +307,7 @@ It "pipes" (like a baking piping bag) the result into the first value of the nex
 
 # Method 1 : Repetitive lines
 CarsDF_6Cyl <- filter(mpg, cyl == 6)
-CarsDF_6Cyl <- filter(CarsDF_6Cyl, c >= 20)
+CarsDF_6Cyl <- filter(CarsDF_6Cyl, cyl >= 20)
 
 # Method 2 : Pipe
 CarsDF_6Cyl <- mpg %>%

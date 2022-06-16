@@ -70,6 +70,7 @@ CarsDF <- CarsDF %>%
 
 ```{r}
 # But dplyr added a specific function to make it easy
+CarsDF <- mtcars
 
 CarsDF <- CarsDF %>%
   rownames_to_column("model")
@@ -346,7 +347,7 @@ GimmeTheDF = ListOfStuff[[3]] %>%
 ```
 
 
-# This can be useful in loops
+**This can be useful in loops**
 ```{r}
 
 for (i in 1:nrow(CarsDF)) {
@@ -355,8 +356,4 @@ for (i in 1:nrow(CarsDF)) {
 
 ```
 
-
-
-#
-# END OF DAY 2  
-#
+**END OF DAY 2**

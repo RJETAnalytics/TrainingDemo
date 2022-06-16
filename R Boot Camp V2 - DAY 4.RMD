@@ -127,12 +127,13 @@ AGENDA
     
     c. Logistic Regression
     
-    d. Tree Models
-    
-    e. 
+    d. Tree Models and other more complex models
     
     
 3. Missed Concepts
+
+    a. If ... Then and other flow control concepts
+
 
 ```{r}
 
