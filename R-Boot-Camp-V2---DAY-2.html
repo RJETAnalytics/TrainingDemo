@@ -399,6 +399,16 @@ lapply(names(sessionInfo()$otherPkgs), function(pkgs)
 <pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(scales)</code></pre>
+<pre><code>## Warning: package &#39;scales&#39; was built under R version 4.1.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;scales&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     discard</code></pre>
+<pre><code>## The following object is masked from &#39;package:readr&#39;:
+## 
+##     col_factor</code></pre>
 <p><em>Load up our prior lessons</em></p>
 <pre class="r"><code>SaveFile = &quot;C:\\Users\\Chris.Woolery\\OneDrive - Republic Airways\\Documents\\2022\\R Boot Camp 2022 V2.RDATA&quot;
 load(SaveFile)</code></pre>
@@ -431,7 +441,9 @@ CarsDF &lt;- CarsDF %&gt;%
 # Dataframe[Row, Column] will give you a specific &quot;Cell&quot;
 # You can use ranges for Row or Column like 1:10 or leave it blank so Dataframe[1:10,] will give you all columns but just the first 10 rows
 
-CarsDF[2,2]</code></pre>
+CarsDF$cyl</code></pre>
+<pre><code>##  [1] 6 6 4 6 8 6 8 4 4 6 6 8 8 8 8 8 8 4 4 4 4 8 8 8 8 4 4 4 8 6 8 4</code></pre>
+<pre class="r"><code>CarsDF[2,2]</code></pre>
 <pre><code>## [1] 21</code></pre>
 <pre class="r"><code>CarsDF[1:10,]</code></pre>
 <pre><code>##                model  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
@@ -462,6 +474,12 @@ class(x)</code></pre>
 <pre class="r"><code>x &lt;- data.frame(x)
 class(x)</code></pre>
 <pre><code>## [1] &quot;data.frame&quot;</code></pre>
+<pre class="r"><code>OurClass = tibble(
+  Name = c(&quot;Chris&quot;, &quot;Emily&quot;, &quot;Jack&quot;),
+  Ages = c(56, 26, 22)
+)
+class(OurClass)</code></pre>
+<pre><code>## [1] &quot;tbl_df&quot;     &quot;tbl&quot;        &quot;data.frame&quot;</code></pre>
 <p>In this context let’s talk about loading data in from four common
 sources</p>
 <p><strong>Excel</strong> I’ll send you this spreadsheet of Lift
@@ -579,6 +597,9 @@ SELECT * FROM demo_ScoobyDoo
 # but I like to use this format in the case of really long SQL Statements</code></pre>
 <pre class="r"><code># Now that you have a data frame we can do some summary type things with it
 # Summarize it
+LandingsDF = LandingsDF %&gt;%
+  mutate(FullLessonName = factor(FullLessonName))
+
 summary(LandingsDF)</code></pre>
 <pre><code>##     MonthBeg                    SessionDate                  Airport_Code      
 ##  Min.   :2021-12-01 00:00:00   Min.   :2021-12-07 00:00:00   Length:753        
@@ -587,6 +608,7 @@ summary(LandingsDF)</code></pre>
 ##  Mean   :2022-01-10 04:56:24   Mean   :2022-01-24 06:56:53                     
 ##  3rd Qu.:2022-02-01 00:00:00   3rd Qu.:2022-02-10 00:00:00                     
 ##  Max.   :2022-03-01 00:00:00   Max.   :2022-03-01 00:00:00                     
+##                                                                                
 ##      City              State                LAT             LONG       
 ##  Length:753         Length:753         Min.   :35.42   Min.   :-80.15  
 ##  Class :character   Class :character   1st Qu.:35.42   1st Qu.:-80.15  
@@ -594,6 +616,7 @@ summary(LandingsDF)</code></pre>
 ##                                        Mean   :35.42   Mean   :-80.15  
 ##                                        3rd Qu.:35.42   3rd Qu.:-80.15  
 ##                                        Max.   :35.42   Max.   :-80.15  
+##                                                                        
 ##  TrainingSessionId    FullName         SessionInstructor  CourseShortName   
 ##  Length:753         Length:753         Length:753         Length:753        
 ##  Class :character   Class :character   Class :character   Class :character  
@@ -601,25 +624,172 @@ summary(LandingsDF)</code></pre>
 ##                                                                             
 ##                                                                             
 ##                                                                             
-##  FullLessonName    
-##  Length:753        
-##  Class :character  
-##  Mode  :character  
-##                    
-##                    
-## </code></pre>
+##                                                                             
+##                                                                                   FullLessonName
+##  Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 18 (Dual Flight) (1.5)              : 82   
+##  Private Pilot ASEL Rev.07 | Stage 3 | Flight Lesson 36 (Dual Flight) (2.0)              : 33   
+##  Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 13 (Dual Flight) (1.5)              : 23   
+##  Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 22 (Dual Flight) (1.5) : 22   
+##  Instrument Rating, ASEL Rev.07 | Flight Stage III | Flight Lesson 29 (Dual Flight) (1.5): 20   
+##  Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 16 (Dual Flight) (1.5)              : 18   
+##  (Other)                                                                                 :555</code></pre>
 <pre class="r"><code># Look at count of unique values
-unique(LandingsDF$FullName) %&gt;% length()</code></pre>
+unique(LandingsDF$Airport_Code) %&gt;% length()</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>unique(LandingsDF$FullName) %&gt;% length()</code></pre>
 <pre><code>## [1] 30</code></pre>
 <pre class="r"><code>unique(LandingsDF$State) %&gt;% length()</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>unique(LandingsDF$FullLessonName) %&gt;% length()</code></pre>
 <pre><code>## [1] 139</code></pre>
+<pre class="r"><code>LandingsDF$FullLessonName %&gt;% levels()</code></pre>
+<pre><code>##   [1] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 10 (Dual Flight) (Night) (1.5)&quot;                       
+##   [2] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 11 (FSTD) (2.0)&quot;                                      
+##   [3] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 12 (Dual Flight) (Night Cross-Country) (2.5)&quot;         
+##   [4] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 13 (FSTD) (2.0)&quot;                                      
+##   [5] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 14 (Dual Flight) (Cross-Country) (2.0)&quot;               
+##   [6] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 16 (Dual Flight) (2.0)&quot;                               
+##   [7] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 18 (Stage Check Flight) (1.5)&quot;                        
+##   [8] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 2 (FSTD) (2.0)&quot;                                       
+##   [9] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 3 (Dual Flight) (Day Cross-Country) (2.5)&quot;            
+##  [10] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 7 (Dual Flight) (1.5)&quot;                                
+##  [11] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 1 | Flight Lesson 9 (FSTD) (2.0)&quot;                                       
+##  [12] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 19 (Solo or PDPIC Flight) (Night) (2.5)&quot;              
+##  [13] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 20 (Solo or PDPIC Flight) (Night) (2.5)&quot;              
+##  [14] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 21 (Solo or PDPIC Flight) (Cross-Country) (2.0)&quot;      
+##  [15] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 22 (Solo or PDPIC Flight) (6.0)&quot;                      
+##  [16] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 23 (FSTD) (2.0)&quot;                                      
+##  [17] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 24 (Solo or PDPIC Flight) (Cross-Country) (3.5)&quot;      
+##  [18] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 25 (FSTD) (2.0)&quot;                                      
+##  [19] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 26 (Solo or PDPIC Flight) (4.0)&quot;                      
+##  [20] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 27 (Solo or PDPIC Flight) (4.0)&quot;                      
+##  [21] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 28 (Solo or PDPIC Flight) (4.0)&quot;                      
+##  [22] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 29 (Solo or PDPIC Flight) (Cross-Country) (3.5)&quot;      
+##  [23] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 30 (Solo or PDPIC Flight) (Cross-Country) (3.5)&quot;      
+##  [24] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 32 (FSTD) (2.0)&quot;                                      
+##  [25] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 33 (Dual Flight) (1.7)&quot;                               
+##  [26] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 34 (Dual Flight) (1.7)&quot;                               
+##  [27] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 35 (Dual Flight) (1.7)&quot;                               
+##  [28] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 36 (Dual Flight) (1.7)&quot;                               
+##  [29] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 37 (Dual Flight) (1.7)&quot;                               
+##  [30] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 38 (Dual Flight) (1.7)&quot;                               
+##  [31] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 39 (FTSD) (2.0)&quot;                                      
+##  [32] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 40 (Dual Flight) (1.7)&quot;                               
+##  [33] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 41 (Dual Flight) (1.7)&quot;                               
+##  [34] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 42 (Dual Flight) (1.7)&quot;                               
+##  [35] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 44 (FSTD) (2.0)&quot;                                      
+##  [36] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 45 (Dual Flight) (1.7)&quot;                               
+##  [37] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 46 (Dual Flight) (1.7)&quot;                               
+##  [38] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 48 (Dual Flight) (1.7)&quot;                               
+##  [39] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 49 (Stage Check Flight) (2.0)&quot;                        
+##  [40] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 50 (FSTD) (2.0)&quot;                                      
+##  [41] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 51 (Dual Fight) (2.0)&quot;                                
+##  [42] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 52 (Dual Fight) (2.0)&quot;                                
+##  [43] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 53 (Dual Fight) (2.0)&quot;                                
+##  [44] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 54 (FSTD) (2.0)&quot;                                      
+##  [45] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 55 (Dual Fight) (2.0)&quot;                                
+##  [46] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 56 (Dual Fight) (2.0)&quot;                                
+##  [47] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 57 (Dual Fight) (2.0)&quot;                                
+##  [48] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 59 (Dual Flight) (2.6)&quot;                               
+##  [49] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 60 (Dual Fight) (2.0)&quot;                                
+##  [50] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 61 (Dual Fight) (2.0)&quot;                                
+##  [51] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 62 (Dual Fight) (2.0)&quot;                                
+##  [52] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 64 (Dual Fight) (2.0)&quot;                                
+##  [53] &quot;Commercial Pilot ASEL Rev.07 | Flight Stage 2 | Flight Lesson 66 (End of Course Flight Check) (2.0)&quot;                
+##  [54] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 10 (Dual Flight) (Night) (1.5)&quot;                       
+##  [55] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 11 (FSTD) (2.0)&quot;                                      
+##  [56] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 12 (Dual Flight) (Night Cross-Country) (2.5)&quot;         
+##  [57] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 13 (FSTD) (2.0)&quot;                                      
+##  [58] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 14 (Dual Flight) (Cross-Country) (2.0)&quot;               
+##  [59] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 16 (Dual Flight) (2.0)&quot;                               
+##  [60] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 18 (Stage Check Flight) (1.5)&quot;                        
+##  [61] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 2 (FSTD) (2.0)&quot;                                       
+##  [62] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 3 (Dual Flight) (Day Cross-Country) (2.5)&quot;            
+##  [63] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 6 (FSTD) (2.0)&quot;                                       
+##  [64] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 7 (Dual Flight) (1.5)&quot;                                
+##  [65] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 1 | Flight Lesson 9 (FSTD) (2.0)&quot;                                       
+##  [66] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 19 (Solo or PDPIC Flight) (Night) (2.5)&quot;              
+##  [67] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 20 (Solo or PDPIC Flight) (Night) (2.5)&quot;              
+##  [68] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 21 (Solo or PDPIC Flight) (Cross-Country) (2.0)&quot;      
+##  [69] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 22 (Solo or PDPIC Flight) (6.0)&quot;                      
+##  [70] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 23 (FSTD) (2.0)&quot;                                      
+##  [71] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 24 (Solo or PDPIC Flight) (Cross-Country) (3.5)&quot;      
+##  [72] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 25 (FSTD) (2.0)&quot;                                      
+##  [73] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 26 (Solo or PDPIC Flight) (4.0)&quot;                      
+##  [74] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 27 (Solo or PDPIC Flight) (4.0)&quot;                      
+##  [75] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 29 (Solo or PDPIC Flight) (Cross-Country) (3.5)&quot;      
+##  [76] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 32 (FSTD) (2.0)&quot;                                      
+##  [77] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 33 (Dual Flight) (1.7)&quot;                               
+##  [78] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 44 (FSTD) (2.0)&quot;                                      
+##  [79] &quot;Commercial Pilot ASEL Rev.08 | Flight Stage 2 | Flight Lesson 45 (Dual Flight) (1.7)&quot;                               
+##  [80] &quot;Flight Instructor Standardization | Check Instructor Standardization | Check Instructor Proficiency Check&quot;          
+##  [81] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage I | Flight Lesson 10 (Stage Check Flight) (1.5)&quot;                      
+##  [82] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage I | Flight Lesson 2 (FSTD) (1.5)&quot;                                     
+##  [83] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage I | Flight Lesson 3 (Dual Flight) (1.5)&quot;                              
+##  [84] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage I | Flight Lesson 5 (FSTD) (1.5)&quot;                                     
+##  [85] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage I | Flight Lesson 6 (Dual Flight) (1.5)&quot;                              
+##  [86] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage I | Flight Lesson 8 (FSTD) (1.5)&quot;                                     
+##  [87] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage I | Flight Lesson 9 (Dual Flight) (1.5)&quot;                              
+##  [88] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 12 (FSTD) (1.5)&quot;                                   
+##  [89] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 13 (Dual Flight) (1.5)&quot;                            
+##  [90] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 15 (FSTD) (1.6)&quot;                                   
+##  [91] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 16 (Dual Flight) (1.5)&quot;                            
+##  [92] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 17 (FSTD) (1.6)&quot;                                   
+##  [93] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 18 (Dual Flight) (1.5)&quot;                            
+##  [94] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 19 (FSTD) (1.6)&quot;                                   
+##  [95] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 20 (Dual Flight) (1.5)&quot;                            
+##  [96] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 21 (FSTD) (1.6)&quot;                                   
+##  [97] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 22 (Dual Flight) (1.5)&quot;                            
+##  [98] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage II | Flight Lesson 24 (Stage Check FSTD) (1.6 FSTD)&quot;                  
+##  [99] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage III | Flight Lesson 26 (Dual Flight) (3.0)&quot;                           
+## [100] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage III | Flight Lesson 27 (Dual Flight) (1.5)&quot;                           
+## [101] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage III | Flight Lesson 29 (Dual Flight) (1.5)&quot;                           
+## [102] &quot;Instrument Rating, ASEL Rev.07 | Flight Stage III | Flight Lesson 31 (Dual Flight) (1.5) End-of-Course Flight Check&quot;
+## [103] &quot;Instrument Rating, ASEL Rev.08 | Flight Stage I | Flight Lesson 2 (FSTD) (1.5)&quot;                                     
+## [104] &quot;Instrument Rating, ASEL Rev.08 | Flight Stage I | Flight Lesson 3 (Dual Flight) (1.5)&quot;                              
+## [105] &quot;Instrument Rating, ASEL Rev.08 | Flight Stage I | Flight Lesson 5 (FSTD) (1.5)&quot;                                     
+## [106] &quot;Instrument Rating, ASEL Rev.08 | Flight Stage I | Flight Lesson 6 (Dual Flight) (1.5)&quot;                              
+## [107] &quot;Instrument Rating, ASEL Rev.08 | Flight Stage I | Flight Lesson 8 (FSTD) (1.5)&quot;                                     
+## [108] &quot;Instrument Rating, ASEL Rev.08 | Flight Stage I | Flight Lesson 9 (Dual Flight) (1.5)&quot;                              
+## [109] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 10 (FSTD) (0.9)&quot;                                                
+## [110] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 11 (Dual Flight) (1.5)&quot;                                         
+## [111] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 13 (Dual Flight) (1.5)&quot;                                         
+## [112] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 15 (FSTD) (0.9)&quot;                                                
+## [113] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 16 (Dual Flight) (1.5)&quot;                                         
+## [114] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 18 (Dual Flight) (1.5)&quot;                                         
+## [115] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 19 (Stage Check Flight) (1.5)&quot;                                  
+## [116] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 5 (Dual Flight) (1.5)&quot;                                          
+## [117] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 7 (FSTD) (0.8)&quot;                                                 
+## [118] &quot;Private Pilot ASEL Rev.07 | Stage 1 | Flight Lesson 8 (Dual Flight) (1.5)&quot;                                          
+## [119] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 20 (Dual/Solo Flight) (1.0 Dual, 0.5 Solo)&quot;                     
+## [120] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 22 (Dual Flight) (1.5)&quot;                                         
+## [121] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 24 (FSTD) (Night) (0.9)&quot;                                        
+## [122] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 25 (Dual Flight) (Night) (1.5)&quot;                                 
+## [123] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 27 (FSTD) (0.9)&quot;                                                
+## [124] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 28 (Dual Flight) (Night) (2.0)&quot;                                 
+## [125] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 30 (Dual Flight) (Cross-Country) (2.0)&quot;                         
+## [126] &quot;Private Pilot ASEL Rev.07 | Stage 2 | Flight Lesson 32 (Stage Check Flight) (1.5)&quot;                                  
+## [127] &quot;Private Pilot ASEL Rev.07 | Stage 3 | Flight Lesson 33 (Solo Flight) (Cross-Country) (2.5)&quot;                         
+## [128] &quot;Private Pilot ASEL Rev.07 | Stage 3 | Flight Lesson 34 (Solo Flight) (Cross-Country) (2.0)&quot;                         
+## [129] &quot;Private Pilot ASEL Rev.07 | Stage 3 | Flight Lesson 36 (Dual Flight) (2.0)&quot;                                         
+## [130] &quot;Private Pilot ASEL Rev.07 | Stage 3 | Flight Lesson 38 (Dual Flight) End-of-Course Flight Check (1.5)&quot;              
+## [131] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 10 (FSTD) (0.9)&quot;                                                
+## [132] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 11 (Dual Flight) (1.5)&quot;                                         
+## [133] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 13 (Dual Flight) (1.5)&quot;                                         
+## [134] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 15 (FSTD) (0.9)&quot;                                                
+## [135] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 16 (Dual Flight) (1.5)&quot;                                         
+## [136] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 18 (Dual Flight) (1.5)&quot;                                         
+## [137] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 19 (Stage Check Flight) (1.5)&quot;                                  
+## [138] &quot;Private Pilot ASEL Rev.08 | Stage 1 | Flight Lesson 8 (Dual Flight) (1.5)&quot;                                          
+## [139] &quot;Private Pilot ASEL Rev.08 | Stage 2 | Flight Lesson 20 (Dual/Solo Flight) (1.0 Dual, 0.5 Solo)&quot;</code></pre>
 <pre class="r"><code># Dates
 # Date and POSIXct (date time)
 
 DateFromCharacter = c(&quot;2021-01-01&quot;, &quot;2021-07-01&quot;, &quot;2022-01-01&quot;)
 DateFromCharacter = as.Date(DateFromCharacter)
+
+DateFromCharacter = c(&quot;01/01/2021&quot;, &quot;07/01/2021&quot;)
+DateFromCharacter = as.Date(DateFromCharacter, format = &quot;%m/%d/%Y&quot;)
 
 # Quick Date Math
 x = difftime(DateFromCharacter[2], DateFromCharacter[1], unit = &quot;days&quot;) %&gt;% as.numeric()
@@ -639,7 +809,7 @@ library(lubridate)</code></pre>
 ## 
 ##     date, intersect, setdiff, union</code></pre>
 <pre class="r"><code>quarter(DateFromCharacter)</code></pre>
-<pre><code>## [1] 1 3 1</code></pre>
+<pre><code>## [1] 1 3</code></pre>
 <pre class="r"><code># More research needed but it&#39;s definitely possible
 # From : https://stackoverflow.com/questions/38042910/adding-quarters-to-r-date
 # You can&#39;t add quarters but you can add months.  This will probably address most use cases
@@ -660,24 +830,32 @@ as.numeric(as.Date(&quot;1970-01-01&quot;))</code></pre>
 <pre><code>## [1] 0</code></pre>
 <pre class="r"><code># Current Date
 Sys.Date()</code></pre>
-<pre><code>## [1] &quot;2022-06-16&quot;</code></pre>
+<pre><code>## [1] &quot;2023-01-26&quot;</code></pre>
 <pre class="r"><code># Current Time
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2022-06-16 14:29:46 EDT&quot;</code></pre>
+<pre><code>## [1] &quot;2023-01-26 05:39:27 EST&quot;</code></pre>
 <p><strong>Factors</strong></p>
 <pre class="r"><code># Factors
+
 FruitTypes &lt;- c(&quot;banana&quot;, &quot;apple&quot;, &quot;watermellon&quot;, &quot;pear&quot;) %&gt;%
   factor()
 
 # Levels default to alphabetical order
 levels(FruitTypes)</code></pre>
 <pre><code>## [1] &quot;apple&quot;       &quot;banana&quot;      &quot;pear&quot;        &quot;watermellon&quot;</code></pre>
-<pre class="r"><code>FruitTypes[2] %&gt;% as.numeric()</code></pre>
-<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>FruitTypes[3] %&gt;% as.numeric()</code></pre>
+<pre><code>## [1] 4</code></pre>
 <pre class="r"><code>FruitPreference = tibble(
   Name = c(&quot;Chris&quot;, &quot;Andrew&quot;, &quot;Tommy&quot;, &quot;Kat&quot;),
   Preference = c(&quot;apple&quot;, &quot;apple&quot;, &quot;watermellon&quot;, &quot;pear&quot;) %&gt;% factor(levels = FruitTypes)
-)</code></pre>
+)
+
+summary(FruitPreference)</code></pre>
+<pre><code>##      Name                 Preference
+##  Length:4           banana     :0   
+##  Class :character   apple      :2   
+##  Mode  :character   watermellon:1   
+##                     pear       :1</code></pre>
 <p><strong>Lists</strong> Are combinations of other data types and
 objects They don’t have to be the same type to be a part of the list
 They don’t have to be the same length to be a part of the list <a href="https://r4ds.had.co.nz/vectors.html?q=lists#visualising-lists" class="uri">https://r4ds.had.co.nz/vectors.html?q=lists#visualising-lists</a></p>
@@ -685,13 +863,13 @@ They don’t have to be the same length to be a part of the list <a href="https:
 <pre><code>## [1] banana      apple       watermellon pear       
 ## Levels: apple banana pear watermellon</code></pre>
 <pre class="r"><code>DateFromCharacter</code></pre>
-<pre><code>## [1] &quot;2021-01-01&quot; &quot;2021-07-01&quot; &quot;2022-01-01&quot;</code></pre>
+<pre><code>## [1] &quot;2021-01-01&quot; &quot;2021-07-01&quot;</code></pre>
 <pre class="r"><code>ListOfStuff = list(FruitTypes, DateFromCharacter, CarsDF)
 ListOfStuff[[1]]</code></pre>
 <pre><code>## [1] banana      apple       watermellon pear       
 ## Levels: apple banana pear watermellon</code></pre>
 <pre class="r"><code>ListOfStuff[[2]]</code></pre>
-<pre><code>## [1] &quot;2021-01-01&quot; &quot;2021-07-01&quot; &quot;2022-01-01&quot;</code></pre>
+<pre><code>## [1] &quot;2021-01-01&quot; &quot;2021-07-01&quot;</code></pre>
 <pre class="r"><code>ListOfStuff[[3]]</code></pre>
 <pre><code>##                  model  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
 ## 1            Mazda RX4 21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
@@ -766,6 +944,46 @@ ListOfStuff[[1]]</code></pre>
 ## [1] &quot;Ferrari Dino&quot;
 ## [1] &quot;Maserati Bora&quot;
 ## [1] &quot;Volvo 142E&quot;</code></pre>
+<p><strong>Jack’s Question about Loops vs dplyr</strong></p>
+<p>I had mentioned that in R we typically try not to use loops because
+we can accomplish the same task with more concise code in dplyr and/or
+faster using the apply() family of functions.</p>
+<p>Here is an example of how dplyr is faster than writing a loop</p>
+<pre class="r"><code># A custom function of dubious utility
+DumbMath = function(DumbNumber) {
+  OutPut = DumbNumber %&gt;% log(base = 10) %&gt;% sqrt()
+  OutPut = OutPut * 10
+  return(OutPut)
+}
+
+# First let&#39;s run this and time it using dplyr
+starttime = Sys.time()
+DumbDF = mpg %&gt;%
+  mutate(DumbVector = DumbMath(hwy))
+dplyrtime = difftime(Sys.time(), starttime, unit = &quot;secs&quot;)
+dplyrtime</code></pre>
+<pre><code>## Time difference of 0.004987001 secs</code></pre>
+<pre class="r"><code># Now let&#39;s run this and time it using a loop to create a vector
+# and then adding that vector to the end of our data frame as a new column
+starttime = Sys.time()
+for (i in 1:nrow(mpg)) {
+  TempVector = mpg$hwy[i] %&gt;% DumbMath
+  if (i == 1) {
+    DumbVector = TempVector
+  } else {
+    DumbVector = c(DumbVector, TempVector)
+  }
+}
+
+DumbDF = bind_cols(mpg, tibble(DumbVector))
+looptime = difftime(Sys.time(), starttime, unit = &quot;secs&quot;)
+
+paste0(&quot;Loop Time : &quot;, looptime, &quot; sec, dplyr time : &quot;, dplyrtime, &quot; sec&quot;)</code></pre>
+<pre><code>## [1] &quot;Loop Time : 0.0359058380126953 sec, dplyr time : 0.00498700141906738 sec&quot;</code></pre>
+<pre class="r"><code>paste0(&quot;dplyr is faster by &quot;, looptime - dplyrtime, &quot; seconds&quot;)</code></pre>
+<pre><code>## [1] &quot;dplyr is faster by 0.0309188365936279 seconds&quot;</code></pre>
+<pre class="r"><code>paste0(&quot;The Loop is &quot;, as.numeric(looptime) / as.numeric(dplyrtime), &quot; times slower&quot;)</code></pre>
+<pre><code>## [1] &quot;The Loop is 7.19988526079266 times slower&quot;</code></pre>
 <p><strong>END OF DAY 2</strong></p>
 </div>
 

@@ -18,6 +18,7 @@ lapply(names(sessionInfo()$otherPkgs), function(pkgs)
   ))
 
 library(tidyverse)
+library(scales)
 
 ```
 
@@ -59,6 +60,7 @@ CarsDF <- mtcars
 
 ```
 
+
 ```{r}
 # Usually we don't use the row.name functionality in data frames
 # You can get rid of it like this
@@ -81,6 +83,8 @@ CarsDF <- CarsDF %>%
 # Let's also discuss how we can address specific rows and columns by position if needed
 # Dataframe[Row, Column] will give you a specific "Cell"
 # You can use ranges for Row or Column like 1:10 or leave it blank so Dataframe[1:10,] will give you all columns but just the first 10 rows
+
+CarsDF$cyl
 
 CarsDF[2,2]
 
@@ -107,6 +111,12 @@ x <- tibble(CarsDF)
 class(x)
 x <- data.frame(x)
 class(x)
+
+OurClass = tibble(
+  Name = c("Chris", "Emily", "Jack"),
+  Ages = c(56, 26, 22)
+)
+class(OurClass)
 
 ```
 
@@ -237,13 +247,18 @@ SELECT * FROM demo_ScoobyDoo
 
 # Now that you have a data frame we can do some summary type things with it
 # Summarize it
+LandingsDF = LandingsDF %>%
+  mutate(FullLessonName = factor(FullLessonName))
+
 summary(LandingsDF)
 
 # Look at count of unique values
+unique(LandingsDF$Airport_Code) %>% length()
 unique(LandingsDF$FullName) %>% length()
 unique(LandingsDF$State) %>% length()
 unique(LandingsDF$FullLessonName) %>% length()
 
+LandingsDF$FullLessonName %>% levels()
 
 ```
 
@@ -255,6 +270,9 @@ unique(LandingsDF$FullLessonName) %>% length()
 DateFromCharacter = c("2021-01-01", "2021-07-01", "2022-01-01")
 DateFromCharacter = as.Date(DateFromCharacter)
 
+DateFromCharacter = c("01/01/2021", "07/01/2021")
+DateFromCharacter = as.Date(DateFromCharacter, format = "%m/%d/%Y")
+
 # Quick Date Math
 x = difftime(DateFromCharacter[2], DateFromCharacter[1], unit = "days") %>% as.numeric()
 difftime(DateFromCharacter[1], DateFromCharacter[2], unit = "days")
@@ -265,6 +283,7 @@ class(x)
 
 
 ```{r}
+
 # Emma; how can I get diff in months or quarters?
 # Chris Answer : I think the lubridate package will do it
 #   https://www.rstudio.com/resources/cheatsheets/
@@ -307,12 +326,13 @@ Sys.time()
 **Factors**
 ```{r}
 # Factors
+
 FruitTypes <- c("banana", "apple", "watermellon", "pear") %>%
   factor()
 
 # Levels default to alphabetical order
 levels(FruitTypes)
-FruitTypes[2] %>% as.numeric()
+FruitTypes[3] %>% as.numeric()
 
 
 FruitPreference = tibble(
@@ -320,6 +340,7 @@ FruitPreference = tibble(
   Preference = c("apple", "apple", "watermellon", "pear") %>% factor(levels = FruitTypes)
 )
 
+summary(FruitPreference)
 
 ```
 
@@ -355,5 +376,51 @@ for (i in 1:nrow(CarsDF)) {
 }
 
 ```
+
+**Jack's Question about Loops vs dplyr**
+
+I had mentioned that in R we typically try not to use loops because we can accomplish the same task with more concise code in dplyr and/or faster using the apply() family of functions.
+
+Here is an example of how dplyr is faster than writing a loop
+
+```{r}
+# A custom function of dubious utility
+DumbMath = function(DumbNumber) {
+  OutPut = DumbNumber %>% log(base = 10) %>% sqrt()
+  OutPut = OutPut * 10
+  return(OutPut)
+}
+
+# First let's run this and time it using dplyr
+starttime = Sys.time()
+DumbDF = mpg %>%
+  mutate(DumbVector = DumbMath(hwy))
+dplyrtime = difftime(Sys.time(), starttime, unit = "secs")
+dplyrtime
+
+# Now let's run this and time it using a loop to create a vector
+# and then adding that vector to the end of our data frame as a new column
+starttime = Sys.time()
+for (i in 1:nrow(mpg)) {
+  TempVector = mpg$hwy[i] %>% DumbMath
+  if (i == 1) {
+    DumbVector = TempVector
+  } else {
+    DumbVector = c(DumbVector, TempVector)
+  }
+}
+
+DumbDF = bind_cols(mpg, tibble(DumbVector))
+looptime = difftime(Sys.time(), starttime, unit = "secs")
+
+paste0("Loop Time : ", looptime, " sec, dplyr time : ", dplyrtime, " sec")
+
+paste0("dplyr is faster by ", looptime - dplyrtime, " seconds")
+
+paste0("The Loop is ", as.numeric(looptime) / as.numeric(dplyrtime), " times slower")
+
+
+```
+
 
 **END OF DAY 2**
