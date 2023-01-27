@@ -180,13 +180,13 @@ NumberOnes_DF %>%
 
 Now add the data from the model object
 
-```{r}
+```{r fig.width=10}
 
 NumberOnes_DF %>%
   ggplot(aes(danceability, WeeksAt1)) +
     geom_point() +
-    geom_line(aes(danceability, NumberOnes_LM$fitted.values), color = "red", size = 2) +
-    geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, size = 1, color = "pink") +
+    geom_line(aes(danceability, NumberOnes_LM$fitted.values), color = "red", size = 4) +
+    geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, size = 2, color = "pink") +
     theme_classic() +
     labs(title = "Billboard Weeks at #1 vs Spotify Danceability")
 
@@ -215,7 +215,10 @@ hist(NumberOnes_LM$residuals, breaks = 30)
 
 An R also has some nice default plots for most models
 
-```{r}
+```{r fig.width=10}
+
+plot(NumberOnes_DF %>%
+       select(WeeksAt1, valence, danceability, spotify_track_popularity))
 
 plot(NumberOnes_LM)
 
@@ -243,10 +246,12 @@ Popularity_DF %>%
 ```
 
 ```{r}
+
 Popularity_DF %>%
   filter(SetName == "Test") %>%
   pull(spotify_track_popularity) %>%
   summary()
+
 ```
 
 
@@ -285,10 +290,20 @@ summary(Popularity_LM$finalModel)
 ```
 
 ```{r}
+
 hist(Popularity_LM$finalModel$residuals, breaks = 30)
+
 ```
 
 ```{r}
+
+plot(Popularity_LM$finalModel )
+
+```
+
+
+```{r}
+
 x = predict(Popularity_LM$finalModel, Popularity_DF_Test)
 
 Popularity_DF_Test = Popularity_DF_Test %>%
@@ -306,12 +321,13 @@ ResultDF = bind_rows(Popularity_DF_Test, Popularity_DF_Train)
 ```
 
 ```{r}
+
   Popularity_DF_Test$Pred %>% summary()
 
 ```
 
 
-```{r}
+```{r fig.width=10}
 
 Popularity_DF_Test %>%
   ggplot(aes(Pred, spotify_track_popularity)) +
@@ -328,7 +344,8 @@ Popularity_DF_Test %>%
 Summary_PopTest = Popularity_DF_Test %>%
   group_by(SetName) %>%
   summarize(MAE = mean(abs(Err)),
-            .groups = "drop")
+            .groups = "drop") %>%
+  mutate(MAPE = MAE / mean(Popularity_DF_Test$spotify_track_popularity))
 
 Summary_PopTest  
 
@@ -347,7 +364,8 @@ ScoobyAOV %>% summary()
 Flow Control if ... else
 
 ```{r}
-Cheater = "Larry"
+
+Cheater = "Shemp"
 
 if (Cheater == "Moe") {
   print("Moe Cheated")
@@ -362,8 +380,11 @@ if (Cheater == "Moe") {
 
 Variable assignment with case ... when
 ```{r}
-TestDF = tibble(
-  Note = case_when(
+
+TestDF = tibble(Cheater = c("Larry", "Moe", "Shemp", "Curly"))
+
+TestDF = TestDF %>%
+  mutate(Note = case_when(
     Cheater == "Moe" ~ "Moe Cheated",
     Cheater == "Larry" ~ "Larry Cheated",
     TRUE ~ "It was some other stoodge"

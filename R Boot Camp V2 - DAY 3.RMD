@@ -17,7 +17,7 @@ We will generally be following "R For Data Science" at: https://r4ds.had.co.nz/ 
 This class will skip some concepts and accelerate you through this book covering about 50% of what is there.  I advise going back and skimming through the things that do not look familiar as they will absolutely come up later in your R journey.
 
 
-# DAY 4 
+# DAY 3 
 ```{r}
 
 # Optional memory clear
@@ -106,17 +106,208 @@ demo_ScoobyDoo = demo_ScoobyDoo %>%
 
 ```
 
-AGENDA
+**AGENDA**
 
-1. Billboard
+Chopped
 
-    a. Join our rank and features data and filter to relevant columns
-    b. Explore the data and visualize
-    c. Build a linear model
-    d. See if the linear model is predictive using test and train splits
+  1. Explore ratings by year and visualize
+
+  2. Reshape data for ratings analysis
+
+  3. Explore ratings data
+
+In-Class Assignment : using Scooby table
+
+  4. Explore ratings by year and visualize
+
+  5. Compare ratings by real versus fake Monsters with both a summary bar and box plot
+
+  6. Pick some features and explore them
+
+Learn to output our data
+
+Excel
+
+  7. CSV or whatever
+
+Billboard
+
+  8. Join our rank and features data and filter to relevant columns
+  
+  9. Explore the data and visualize
+  
+  10. Build a linear model
+  
+  11. See if the linear model is predictive using test and train splits
+
+```{r fig.width=10}
+library(lubridate)
+
+demo_Chopped %>%
+  filter(!is.na(episode_rating)) %>%
+  mutate(air_year = year(air_date) %>% factor()) %>%
+  ggplot(aes(series_episode, episode_rating)) +
+    theme_classic() +
+    geom_point(aes(color = air_year), size = 2) +
+#    geom_line(aes(color = air_year), size = 1)
+  geom_smooth(method = "loess", se = FALSE, formula = "y ~ x")
+
+```
 
 ```{r}
 
+# separate_rows is similar to SQL's STRING_SPLIT function
+# This creates every combo of ingredient per episode
+Chopped_Step1 = demo_Chopped %>%
+  separate_rows(appetizer, sep = ",") %>%
+  separate_rows(entree, sep = ",") %>%
+  separate_rows(dessert, sep = ",") %>%
+  mutate(appetizer = str_trim(appetizer),
+         entree = str_trim(entree),
+         dessert = str_trim(dessert))
+
+# Collapse the ingredients per course into ONE ingredient column
+# and remove all possible combinations to just the unique ones with distinct
+Chopped_Step2 = bind_rows(
+  Chopped_Step1 %>%
+    mutate(ingredient = appetizer) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge1, judge2, judge3, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step1 %>%
+    mutate(ingredient = entree) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge1, judge2, judge3, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step1 %>%
+    mutate(ingredient = dessert) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge1, judge2, judge3, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient)) %>%
+  distinct() %>%
+  arrange(series_episode)
+# pivot_longer() would accomplish this in fewer lines of code but its' more opaque
+
+# Collapse Judges into one column
+Chopped_Step3 = bind_rows(
+  Chopped_Step2 %>%
+    mutate(judge = judge1) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step2 %>%
+    mutate(judge = judge2) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient),
+  Chopped_Step2 %>%
+    mutate(judge = judge3) %>%
+    dplyr::select(series_episode, episode_rating, air_date, judge, 
+                  contestant1, contestant2, contestant3, contestant4, ingredient)) %>%
+  arrange(series_episode)
+
+# Collapse Contestants into one column
+# Now each row is each episode with a row per unique ingredient, judge and contestant
+Chopped_Ratings = bind_rows(
+  Chopped_Step3 %>%
+    mutate(contestant = contestant1) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient),
+  Chopped_Step3 %>%
+    mutate(contestant = contestant2) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient),
+  Chopped_Step3 %>%
+    mutate(contestant = contestant3) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient),
+  Chopped_Step3 %>%
+    mutate(contestant = contestant4) %>%
+    dplyr::select(series_episode, episode_rating, air_date, 
+                  judge, contestant, ingredient)) %>%
+  arrange(series_episode)
+
+```
+
+**Which Judges are on Higher Rated Episodes**
+
+Reducing Judges - Filter to certain year or season?
+
+
+```{r fig.width=10}
+Chopped_Ratings %>%
+  filter(!is.na(episode_rating)) %>%
+  dplyr::select(series_episode, judge, episode_rating) %>%
+  distinct() %>%
+  group_by(judge) %>%
+  mutate(judge = factor(judge),
+         AppearanceCount = n(),
+         AvgRating = median(episode_rating)) %>%
+  filter(AppearanceCount >= 10) %>%
+    ggplot(aes(reorder(judge, desc(AvgRating)), episode_rating)) +
+      geom_boxplot() +
+      geom_jitter(width = 0.2, color = "grey") +
+      coord_flip() +
+#      theme_minimal() +
+      theme_classic() +
+      labs(title = "Chopped - Judges by Ratings",
+           x = "Judge", y = "IMDB Rating")
+```
+
+
+```{r fig.width=10}
+
+demo_ScoobyDoo %>%
+  filter(!is.na(imdb)) %>%
+  filter(imdb > 0) %>%
+  mutate(air_year = year(date_aired) %>% factor()) %>%
+  ggplot(aes(index, imdb)) +
+    theme_classic() +
+    geom_point(aes(color = air_year), size = 2) +
+    geom_smooth(method = "loess", se = FALSE, formula = "y ~ x") +
+    theme(legend.position = "top")
+
+```
+
+```{r}
+demo_ScoobyDoo %>%
+  filter(monster_real %in% c("TRUE", "FALSE")) %>%
+  mutate(monster_real = factor(monster_real, levels = c("TRUE", "FALSE"))) %>%
+  ggplot(aes(monster_real, imdb)) +
+    geom_boxplot(fill = "dark red", outlier.shape = NA) +
+    geom_jitter(width = 0.2, color = "grey", alpha = 0.33) +
+    coord_flip() +
+    theme_classic() +
+  labs(title = "Are Real or Fake Monsters More Highly Rated?",
+       y = "IMDB Rating", x = "Real Monster?")
+```
+
+
+```{r fig.width=10}
+demo_ScoobyDoo %>%
+  filter(!is.na(number_of_snacks)) %>%
+  ggplot(aes(factor(number_of_snacks), imdb)) +
+    geom_boxplot(na.rm = TRUE) +
+    geom_jitter(width = 0.2, color = "grey", alpha = 0.33) +
+    theme_classic() +
+  labs(title = "What's the relationship between Scooby Snack consumption and rating?",
+       y = "IMDB Rating", x = "Scooby Snack Count")
+```
+
+
+```{r fig.width=10}
+demo_ScoobyDoo %>%
+  filter(!is.na(monster_type)) %>%
+  filter(!monster_type == "NULL") %>%
+  group_by(monster_type) %>%
+  summarize(n = n(), .groups = "drop") %>%
+  filter(n >= 5) %>%
+  ggplot(aes(reorder(monster_type, n), n)) +
+  geom_col() +
+    geom_label(aes(y = n + 5, label = n)) +
+    theme_classic() +
+    coord_flip() +
+    labs(title = "Most Common Monster Types",
+         x = "Monster Type", y = "Appearances")
+```
+
+
+```{r fig.width=10}
 Billboard_DF = demo_BillboardRank %>%
   dplyr::select(-c(song, performer)) %>%
   inner_join(demo_BillboardFeatures, by = c("song_id" = "song_id")) %>%
@@ -129,144 +320,24 @@ NumberOnes_DF = Billboard_DF %>%
 
 NumberOnes_LM = lm(WeeksAt1 ~ danceability, data = NumberOnes_DF)
 
-```
-
-```{r}
-NumberOnes_LM
-
-# What this means
-# WeeksAt1 = 2.279 X danceability + 1.485
-
-```
-
-```{r}
-
 summary(NumberOnes_LM)
 
 ```
 
-Let's explore the relationship between our target, predictors and the regression model we've built.
+What this means
+WeeksAt1 = 2.279 X danceability + 1.485
 
-```{r}
+```{r fig.width=10}
 
-NumberOnes_DF %>%
+NumberOnes_DF %>% 
   ggplot(aes(danceability, WeeksAt1)) +
-    geom_point() +
-    theme_classic() +
-    labs(title = "Billboard Weeks at #1 vs Spotify Danceability")
-
-
-```
-
-Now add the data from the model object
-
-```{r}
-
-NumberOnes_DF %>%
-  ggplot(aes(danceability, WeeksAt1)) +
-    geom_point() +
-    geom_line(aes(danceability, NumberOnes_LM$fitted.values), color = "red", size = 2) +
-    geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, size = 1, color = "pink") +
-    theme_classic() +
-    labs(title = "Billboard Weeks at #1 vs Spotify Danceability")
+  geom_point() +
+  geom_smooth(method = "lm", formula = "y ~ x") +
+  theme_classic()
 
 ```
 
-We can plot the residuals (error between predicted and actual) ourselves to see what the bias in the variance is
-
-```{r}
-
-hist(NumberOnes_LM$residuals, breaks = 30)
-
-```
-
-An R also has some nice default plots for most models
-
-```{r}
-
-plot(NumberOnes_LM)
-
-```
-
-```{r}
-library(caret)
-
-set.seed(46143)
-PartIndex = createDataPartition(NumberOnes_DF$spotify_track_popularity, times = 1,
-                                 p = 0.7, list = FALSE)
-
-Popularity_DF = NumberOnes_DF %>%
-  mutate(RowID = row_number(),
-         SetName = as.factor(if_else(RowID %in% PartIndex, "Train", "Test"))) %>%
-  dplyr::relocate(c(RowID, SetName), .before = everything()) %>%
-  filter(complete.cases(.))
-
-```
-
-```{r}
-
-Popularity_DF_Train = NumberOnes_DF %>%
-  filter(SetName == "Train")
-
-Popularity_DF_Test = NumberOnes_DF %>%
-  filter(SetName == "Test")
-
-```
-
-Let's introduce the concept of [cross validation](https://en.wikipedia.org/wiki/Cross-validation_%28statistics%29#/media/File:K-fold_cross_validation_EN.svg) for our training data
+ 
 
 
-```{r}
-
-set.seed(46143)
-pop.cv.folds <- createMultiFolds(Popularity_DF_Train$spotify_track_popularity, k = 5, times = 4)
-pop.cv.cntrl <- trainControl(method = "repeatedcv", number = 5,
-                         repeats = 4, index = pop.cv.folds)
-
-Popularity_LM <- train(spotify_track_popularity ~ mode + danceability + valence, 
-                           data = Popularity_DF_Train,
-                           method="lm",
-                           trControl = pop.cv.cntrl)
-
-```
-
-```{r}
-
-summary(Popularity_LM$finalModel)
-
-```
-
-```{r}
-hist(Popularity_LM$finalModel$residuals, breaks = 30)
-```
-
-```{r}
-x = predict(Popularity_LM$finalModel, Popularity_DF_Test)
-
-Popularity_DF_Test = Popularity_DF_Test %>%
-      mutate(Pred = predict(Popularity_LM$finalModel, Popularity_DF_Test),
-             Err = Pred - spotify_track_popularity,
-             AbsErr = abs(Err))
-```
-
-```{r}
-
-Popularity_DF_Test %>%
-  ggplot(aes(Pred, spotify_track_popularity)) +
-    geom_point(aes(color = AbsErr)) + 
-    scale_color_gradient(low = "grey", high = "red") +
-    theme_classic()
-
-```
-
-
-```{r}
-Summary_PopTest = Popularity_DF_Test %>%
-  group_by(SetName) %>%
-  summarize(MAE = mean(Err),
-            MAPE = mean(AbsErr),
-            .groups = "drop")
-  
-
-```
 
