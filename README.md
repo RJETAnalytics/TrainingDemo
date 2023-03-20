@@ -2,30 +2,26 @@
 
 **RJET Tech Skills - Advanced Analytical Methods**
 
-Agenda and Files
+Agenda
 
-	1. Turning your sheet into a table using [Scooby Doo Episodes](https://htmlpreview.github.io?https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_ScoobyDoo.csv)
-		a. A quick sum will show the advantage of using tables (count episodes)
-		b. Add a month field for easier summarization
-		c. Summary Page
-			i. Auto max month
-			ii. EOMONTH to cascade months
-			iii. Two categories to filter and do SUMIFS or COUNTIFS
-		d. Show how VLOOKUP/XLOOKUP doesn't break with table ref vs row/col reference
-		e. Index/Match for multiple criteria (might not need this)
-	2. Power Query
-		a. Billboard big data (maybe after using it in phase 1)
-		b. Pull in features to join
-		c. Transform, make a calc column; etc.
-	3. Common Analytic Tools Methods
-		a. Normalizing data.  
-			i. $ per unit allows you to compare.  
-			ii. Use a base year or base period
-		b. Rate Volume
-			i. Maybe use the generic hotel data
-    c. Regression and Logistic Regression 
+1. Turning your sheet into a table using [Scooby Doo Episodes](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_ScoobyDoo.csv)<br>
+	a. Transform data into a table because name references are easier than row / column references<br>
+	b. Creating a summary page with SUM(), COUNT(), SUMIF(), and COUNTIF()<br>
+	c. Tidy tables for tidy charts<br>
+	d. Using XLOOKUP versus VLOOKUP<br>
+	e. Index/Match for multiple criteria<br>
 
-<br>
+2. Power Query using [Billboard Chart Data](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_BillBoardRank.csv) and [Billboard Feature Data](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_BillBoardFeatures.csv)
+	a. Joining and cleaning multiple tables of data<br>
+	b. Creating calculated columns<br>
+	c. Creating aggregations<br>
+
+3. Common Analytic Tools Methods<br> 
+	a. Normalizing data<br>
+	b. Rate Volume<br>
+	c. Regression and Logistic Regression<br>
+	d. Finding numeric outliers with distribution tests<br>
+	e. Finding categorical outliers with Chi Squared tests<br>
 
 ___
 
