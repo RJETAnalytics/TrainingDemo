@@ -23,7 +23,7 @@ Agenda
 3. Common Analytic Tools Methods<br> 
 	a. Normalizing data<br>
 	b. Rate Volume<br>
-	c. Regression and Logistic Regression<br>
+	c. Regression using Excel analysis pack [demo_Regression](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_Regression.xlsx) and examples of how regression is calculated "manually"  [Linear Regression - Manual Example - Billboard](https://github.com/RJETAnalytics/TrainingDemo/blob/main/Linear%20Regression%20-%20Manual%20Example%20-%20Billboard.xlsx)<br>
 	d. Finding numeric outliers with distribution tests<br>
 	e. Finding categorical outliers with Chi Squared tests<br>
 
