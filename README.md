@@ -16,9 +16,10 @@ Agenda
 	e. Index/Match for multiple criteria<br>
 
 2. Power Query using [Billboard Chart Data](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_BillBoardRank.csv) and [Billboard Feature Data](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_BillBoardFeatures.csv)
-	a. Joining and cleaning multiple tables of data<br>
-	b. Creating calculated columns<br>
-	c. Creating aggregations<br>
+	a. [Excel08 01:21](https://user-images.githubusercontent.com/106988755/226985643-1bf5b58a-6a36-4b9c-adaa-c0413718a050.mp4) Importing from web<br>
+	b. [Excel09a 01:13](https://user-images.githubusercontent.com/106988755/226988261-636ffccb-97e9-406f-9e25-5ae797843a5a.mp4), [Excel09b 01:21](https://user-images.githubusercontent.com/106988755/226988407-d5d6b3b6-d3eb-45dc-9f63-45a431cd66f5.mp4) Joining and cleaning multiple tables of data<br>
+	b.  [Excel10 02:35](https://user-images.githubusercontent.com/106988755/226980587-f68b12fe-78b8-4414-b3cb-dcec2c437dba.mp4) Creating calculated columns<br>
+	c.  [Excel11 02:53](https://user-images.githubusercontent.com/106988755/226980365-8be36758-fc85-442c-9ee1-796c8f4cffc0.mp4) Creating aggregations<br>
 
 3. Common Analytic Tools Methods<br> 
 	a. Normalizing data<br>
