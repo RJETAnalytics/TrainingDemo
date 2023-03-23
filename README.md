@@ -22,7 +22,7 @@ Agenda
 	c.  [Excel11 02:53](https://user-images.githubusercontent.com/106988755/226980365-8be36758-fc85-442c-9ee1-796c8f4cffc0.mp4) Creating aggregations<br>
 
 3. Common Analytic Tools Methods<br> 
-	a. Normalizing data<br>
+	a. [Normalizing data](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_NormalizingData.md)<br>
 	b. Rate Volume<br>
 	c. Regression using Excel analysis pack [demo_Regression](https://github.com/RJETAnalytics/TrainingDemo/blob/main/demo_Regression.xlsx) and examples of how regression is calculated "manually"  [Linear Regression - Manual Example - Billboard](https://github.com/RJETAnalytics/TrainingDemo/blob/main/Linear%20Regression%20-%20Manual%20Example%20-%20Billboard.xlsx)<br>
 	d. Finding numeric outliers with distribution tests<br>
