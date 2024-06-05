@@ -18,7 +18,7 @@ This class will skip some concepts and accelerate you through this book covering
 
 
 # DAY 4 
-```{r}
+```{r include=FALSE}
 
 # Optional memory clear
 rm(list=ls())
@@ -36,79 +36,163 @@ lapply(names(sessionInfo()$otherPkgs), function(pkgs)
 library(tidyverse)
 library(lubridate)
 
+# A better data summary function; good for unknown data sets 
+DataSummary <- function(Dataset) {
+  Dataset[sapply(Dataset, is.character)] <- lapply(Dataset[sapply(Dataset, is.character)], as.factor)  
+  StatSet <- data.frame(summary(Dataset), stringsAsFactors = FALSE) %>%
+    rename(remove = 1,
+           ColName = 2,
+           ColStats = 3) %>%
+    mutate(ColName = str_replace_all(ColName, "\\s", ""),
+           ColStats = as.character(ColStats)) %>%
+    dplyr::select(ColName, ColStats) %>%
+    filter(!is.na(ColStats))
+  SumSet <- data.frame(
+    ColStats = Dataset[sapply(Dataset, is.numeric)] %>% 
+    replace(is.na(.), 0) %>%
+    sapply(sum),
+    stringsAsFactors = FALSE) %>%
+    mutate(ColName = row.names(.),
+           ColStats = as.character(paste0("Sum : ", ColStats))) %>%
+    dplyr::select(ColName, ColStats)
+  ResultSet <-  bind_rows(StatSet, SumSet) %>%
+    left_join(StatSet %>% 
+                distinct(ColName) %>% 
+                mutate(ColOrder = row_number()),
+              by = c("ColName" = "ColName")) %>%
+    arrange(ColOrder) %>%
+    dplyr::select(ColOrder, ColName, ColStats)
+  return(ResultSet)
+}
+
+ # Create a distance function between two gps points
+DistMiles <- function(LAT, LNG, LAT1, LNG1) {
+           Euclidean <- 2 * 3858.8 *
+             asin(sqrt(
+               sin((LAT1 * pi/180 - LAT * pi/180)/2)^2 + 
+                      cos(LAT * pi/180) * 
+                      cos(LAT1 * pi/180) * 
+                      sin((LNG1 * pi/180 - LNG * pi/180)/2)^2))
+           return(Euclidean)
+}
+
 ```
 
-Let's load up some publicly available data
+Let's load up some new publicly available data
 
 ```{r}
 
-GIT_CharTable = "https://raw.githubusercontent.com/RJETAnalytics/TrainingDemo/main/CharTable.RDATA"
-download.file(GIT_CharTable,"CharTable.RDATA", method="curl")
-CharTable <- readRDS("CharTable.RDATA")
+# Read a table where every row is an AirBnb Location in Barcelona Spain from Kaggle
+# https://www.kaggle.com/datasets/zakariaeyoussefi/barcelona-airbnb-listings-inside-airbnb
+ 
+# We could read the file and have R auto-assign data types based on the first 1000 and clean up the column names
+# but we'll do that in advance to save time
+# janitor::clean_names(NameOfDataset, case = "upper_camel") was used to get clean up the column names
+#
 
-# A custom function to convert a column to a logical variable type while handling 
-# character values of "NULL"
-as.nalogi = function(CharVec) {
-  CharVec = if_else(CharVec == "NULL", as.character(NA), CharVec)
-  CharVec = as.logical(CharVec)
-  return(CharVec)
-}
+Airbnb_ColNames = c("RowID", "PropertyId", "HostId", "HostIsSuperhost", "HostListingsCount", "Neighbourhood", "Zipcode", "Latitude", "Longitude", "PropertyType", "RoomType", "Accommodates", "Bathrooms", "Bedrooms", "Beds", "Amenities", "Price", "MinimumNights", "HasAvailability", "Availability30", "Availability60", "Availability90", "Availability365", "NumberOfReviewsLtm", "ReviewScoresRating")
+Airbnb_ColTypes = c("nnnlnccnnccnnnnccnlnnnnnn")
 
-as.nanumeric = function(CharVec) {
-  CharVec = if_else(CharVec == "NULL" | is.na(CharVec), as.character("0"), CharVec)
-  CharVec = as.numeric(CharVec)
-  return(CharVec)
-}
+demo_Airbnb_Barcelona <- readr::read_csv('https://raw.githubusercontent.com/RJETAnalytics/TrainingDemo/main/demo_Airbnb_Barcelona.csv',
+                     col_types = Airbnb_ColTypes,
+                     col_names = Airbnb_ColNames,
+                     skip = 1)
 
-# Read a Billboard table where each row is a song and its' rank in the top 100 for every week since the 1950's
-demo_BillboardRank <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/billboard.csv')
+#Clean up Amenities column and create 1 row per Amenities Data Frame
+Airbnb_Amenities = demo_Airbnb_Barcelona %>%
+  select(PropertyId, Amenities) %>%
+  mutate(Amenities = str_remove_all(Amenities, "\\[|\\]")) %>%
+  # separate_rows splits a field from 1 row into many based on a delimiter
+  separate_rows(Amenities, sep = ", ") %>%
+  # remove all \\W aka non-word characters
+  mutate(Amenities = str_remove_all(Amenities, "\\W"),
+         Amenities = paste0("Has", Amenities),
+         HasAmenity = 1)
 
-# Read a table with song attributes from the Spotify database with an ID that allows us to link them to the Billboard rank table
-demo_BillboardFeatures <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/audio_features.csv')
+AGGAirbnb_Property_Amenities = Airbnb_Amenities %>%
+  group_by(PropertyId) %>%
+  summarize(AmenityCount = n(), .groups = "drop")
 
-# Clean up date fields
-demo_BillboardRank = demo_BillboardRank %>%
-  mutate(week_id = as.Date(week_id, format = "%m/%d/%Y"))
+#Re-aggregate and rank to top 25 amenities by occurance
+AGGAirbnb_Amenities = Airbnb_Amenities %>%
+  group_by(Amenities) %>%
+  summarize(AmenityCount = n(), .groups = "drop") %>%
+  arrange(desc(AmenityCount)) %>%
+  mutate(AmenityRank = row_number()) %>%
+  filter(AmenityRank <= 25)
 
-# Clean up character fields for unwanted values
-demo_BillboardFeatures = demo_BillboardFeatures %>%
-    mutate_if(is.character, function(x) chartr(CharTable$Source, CharTable$Translated, x))
+#Join back to Property ID by Amenity which by inner join gives us only top 25
+#then pivot wider so that we have 1 rows per property with 1/0 for presence of the amenity 
+Airbnb_Amenities = Airbnb_Amenities %>%
+  inner_join(AGGAirbnb_Amenities, by = "Amenities") %>%
+  # pivot wider makes 25 rows into 1 row with 25 new columns
+  pivot_wider(id_cols = c(PropertyId),
+              names_from = Amenities, values_from = HasAmenity, 
+              values_fn = sum, values_fill = 0) %>%
+  janitor::clean_names(case = "upper_camel") %>%
+  # change from 1/0 to TRUE/FALCE logical
+  mutate_at(vars(2:26), ~ as.logical(pmin(., 1))) %>%
+  left_join(AGGAirbnb_Property_Amenities, by = "PropertyId") %>%
+  mutate(AmenityCount = if_else(is.na(AmenityCount), 0, AmenityCount)) %>% 
+  relocate(AmenityCount, .after = PropertyId)
 
-# Read a table where every row is an episode of the cooking competition show Chopped
-demo_Chopped <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-25/chopped.tsv')
+#Re-join our top 25 amenity columns to our original table and drop the junky amenity column
+AirbnbDF = demo_Airbnb_Barcelona %>%
+  select(-Amenities) %>%
+  inner_join(Airbnb_Amenities, by = c("PropertyId"))  
 
-# Fix data type for date and clean up character fields for unwanted values
-demo_Chopped = demo_Chopped %>%
-  mutate(air_date = as.Date(air_date, format = "%B %d, %Y")) %>%
-  mutate_if(is.character, function(x) chartr(CharTable$Source, CharTable$Translated, x))
+# Barcelona Central Plaza "Plaça de Catalunya" will be considered the City Center
+CityCenter = tibble(LAT = 41.386553466894135, LONG = 2.170042714240173)
 
-# Read a table where every row is an episode of the Scooby Doo cartoon show
-demo_ScoobyDoo <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-13/scoobydoo.csv')
+# Clean up data types and create defaults for NA values
+# Character fields like Property Type and Neighbourhood that have finite values
+# are converted to factors so that they can be used for prediction
+# Add distance to city center
+AirbnbDF = AirbnbDF %>%
+  filter(!is.na(Neighbourhood)) %>%
+  select(-c(Zipcode)) %>%
+  mutate(HostIsSuperhost = if_else(is.na(HostIsSuperhost), FALSE, HostIsSuperhost),
+         HostListingsCount = if_else(is.na(HostListingsCount), 0, HostListingsCount),
+         Neighbourhood = factor(Neighbourhood),
+         PropertyType = factor(PropertyType),
+         RoomType = factor(RoomType),
+         Bathrooms = if_else(is.na(Bathrooms), 0, Bathrooms) %>% as.numeric(),
+         Bedrooms = if_else(is.na(Bedrooms), 0, Bedrooms) %>% as.numeric(),
+         Beds = if_else(is.na(Beds), 0, Beds) %>% as.numeric(),
+         Price = str_remove_all(Price, "\\$|\\,") %>% as.numeric(),
+         ReviewScoresRating = if_else(is.na(ReviewScoresRating),
+                                      median(ReviewScoresRating, na.rm = T),
+                                      ReviewScoresRating),
+         CityCenterDistance = DistMiles(Latitude, Longitude, CityCenter$LAT, CityCenter$LONG)) %>%
+  relocate(CityCenterDistance, .after = Longitude)
 
-# Fix data types for numeric and binary fields
-demo_ScoobyDoo = demo_ScoobyDoo %>%
-  mutate(across(contains(c("imdb", 
-                           "number_of_snacks", "split_up", "another_mystery",
-                           "set_a_trap", "jeepers", "jinkies", "my_glasses",
-                           "just_about_wrapped_up", "zoinks", "groovy",
-                           "scooby_doo_where_are_you", "rooby_rooby_roo")),
-              ~ as.nanumeric(.))) %>%
-  mutate(across(contains(c("caught_fred", "caught_daphnie", "caught_velma",
-                           "caught_shaggy", "caught_scooby", "captured_fred", 
-                           "captured_daphnie", "captured_velma", "captured_shaggy", 
-                           "captured_scooby", "snack_fred", "snack_daphnie", 
-                           "snack_velma", "snack_shaggy", "snack_scooby", 
-                           "unmask_fred", "unmask_daphnie", "unmask_velma", 
-                           "unmask_shaggy", "unmask_scooby")),
-              ~ as.nalogi(.))) %>%
-  mutate(across(contains(c("trap_work_first", "non_suspect", "arrested")),
-              ~ as.nalogi(.)))
+# Defaulting to "Other"
+# Some values are so sparse that they won't be useful for our modeling so we will
+# replace anything with less than
+MinAllowable = 10
+# using fct_collapse or factor collapse
+AirbnbDF <- AirbnbDF %>%
+  mutate(PropertyType = fct_collapse(PropertyType ,
+                                     Other = AirbnbDF %>% 
+                                       count(PropertyType) %>%
+                                       filter(n < MinAllowable) %>%
+                                       pull(PropertyType)),
+         Neighbourhood = fct_collapse(Neighbourhood ,
+                                     Other = AirbnbDF %>% 
+                                       count(Neighbourhood) %>%
+                                       filter(n < MinAllowable) %>%
+                                       pull(Neighbourhood)))
+
+# Define the non-predictive columns for later exclusion
+# ID columns aren't useful, zip code and lat/long are dups to neighborhood
+# Availability is always true and our pricing prediction isn't dependent
+# on it's availability for a snapshot in time (maybe scarcity is a driver but ignore for now)
 
 ```
 
 AGENDA
 
-1. Billboard
+1. Barcelona Airbnb Properties
 
     a. Join our rank and features data and filter to relevant columns
     
@@ -116,7 +200,7 @@ AGENDA
     
     c. Build a linear model
     
-    d. See if the linear model is predictive using test and train splits
+    d. See if the linear model is predictive for price using test and train splits
     
     
 2. Discuss Other Model Types
@@ -132,84 +216,138 @@ AGENDA
     
 3. Missed Concepts
 
-    a. If ... Then and other flow control concepts
+    a. If ... Then and case ... when will be covered while manipulating the data in the prediction datasets
+
+
+Explore the AirbnbDF
+```{r}
+
+summary(AirbnbDF)
+
+```
+
+Explore the thing we want to predict which is the price
+```{r}
+AirbnbDF %>%
+  ggplot() +
+    geom_histogram(aes(Price), bins = 20) +
+    labs(title = "Price Distribution",
+         subtitle = paste0("Price range ", min(AirbnbDF$Price), " - ", max(AirbnbDF$Price)))
+```
+
+Given the extreem outliers in high price, we might reset our goal to predict prices for the lower 95%
+```{r}
+AirbnbDF %>%
+  filter(Price <= quantile(AirbnbDF$Price, 0.95)) %>%
+  ggplot() +
+    geom_histogram(aes(Price), bins = 20) +
+    labs(title = "Price Distribution - Up to 95th Percentile",
+         subtitle = paste0("Price range ", min(AirbnbDF$Price), 
+                           " - ", max(AirbnbDF$Price[AirbnbDF$Price<=quantile(AirbnbDF$Price, 0.95)])))
+
+
+```
 
 
 ```{r}
 
-Billboard_DF = demo_BillboardRank %>%
-  dplyr::select(-c(song, performer)) %>%
-  inner_join(demo_BillboardFeatures, by = c("song_id" = "song_id")) %>%
-  filter(!is.na(spotify_track_popularity))
+AirbnbDF %>%
+  filter(Price <= quantile(AirbnbDF$Price, 0.95)) %>%
+  ggplot(aes(CityCenterDistance, Price)) +
+    geom_point(color = "grey") +
+    geom_smooth(method = "lm", formula = 'y ~ x', se = F) +
+    theme_classic() +
+    labs(title = "Price vs Distance to City Center")
 
-NumberOnes_DF = Billboard_DF %>%
-  filter(week_position == 1) %>%
-  group_by(song_id, performer, song, spotify_track_popularity, spotify_genre, mode, danceability, valence) %>%
-  summarize(WeeksAt1 = n(), .groups = "drop")
+AirbnbDF %>%
+  filter(Price <= quantile(AirbnbDF$Price, 0.95)) %>%
+  ggplot(aes(AmenityCount, Price)) +
+    geom_point(color = "grey") +
+    geom_smooth(method = "lm", formula = 'y ~ x', se = F) +
+    theme_classic() +
+    labs(title = "Price vs Amenity Count")
 
-NumberOnes_LM = lm(WeeksAt1 ~ danceability, data = NumberOnes_DF)
+AirbnbDF %>%
+  filter(Price <= quantile(AirbnbDF$Price, 0.95)) %>%
+  ggplot(aes(Accommodates, Price)) +
+    geom_point(color = "grey") +
+    geom_smooth(method = "lm", formula = 'y ~ x', se = F) +
+    theme_classic() +
+    labs(title = "Price vs Number of Guests (Accommodates)")
+
+AirbnbDF %>%
+  filter(Price <= quantile(AirbnbDF$Price, 0.95)) %>%
+  filter(MinimumNights <= 180) %>%
+  ggplot(aes(MinimumNights, Price)) +
+    geom_point(color = "grey") +
+    geom_smooth(method = "lm", formula = 'y ~ x', se = F) +
+    theme_classic() +
+    labs(title = "Price vs Minimum Nights")
 
 ```
+
 
 ```{r}
-NumberOnes_LM
 
-# What this means
-# WeeksAt1 = 2.279 X danceability + 1.485
+AirbnbDF_Clean = AirbnbDF %>%
+  filter(Price <= quantile(AirbnbDF$Price, 0.95)) %>%
+  filter(MinimumNights <= 180) %>%
+  relocate(Price, .after = HostId) %>%
+  select(-RowID)
+
+Airbnb_LM = lm(Price ~ CityCenterDistance + AmenityCount + Accommodates,
+               data = AirbnbDF_Clean)
+
+summary(Airbnb_LM)
 
 ```
 
-```{r}
+This formula tells us that:
 
-summary(NumberOnes_LM)
+Price = 29.01431
+        + -9.02948 * City Center Distance 
+        +  0.29246 * Amenity Count  
+        + 17.17523 * Accommodates
 
-```
+This formula explains 43.89% of the variance in price
+There are 18772 degrees of freedom + 4 prediction coefficients for 18776 observations
+The range of variability (p value) for 3 predictor coefficients is small enough to consider them statistically significant.  This does NOT mean that the effective size is large (note that the change in price for adding 1 amenity is +0.29)
+
 
 Let's explore the relationship between our target, predictors and the regression model we've built.
-
-```{r}
-
-NumberOnes_DF %>%
-  ggplot(aes(danceability, WeeksAt1)) +
-    geom_point() +
-    theme_classic() +
-    labs(title = "Billboard Weeks at #1 vs Spotify Danceability")
-
-
-```
 
 Now add the data from the model object
 
 ```{r fig.width=10}
 
-NumberOnes_DF %>%
-  ggplot(aes(danceability, WeeksAt1)) +
-    geom_point() +
-    geom_line(aes(danceability, NumberOnes_LM$fitted.values), color = "red", size = 4) +
-    geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, size = 2, color = "pink") +
+AirbnbDF_Clean %>%
+  mutate(Pred_Price = Airbnb_LM$fitted.values,
+         AbsErr = abs(Pred_Price - Price)) %>%
+  ggplot(aes(Pred_Price, Price)) +
+    geom_point(aes(color = AbsErr)) +
+#    geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, size = 2, color = "pink") +
+    scale_color_gradient(low = "grey", high = "red") +
     theme_classic() +
-    labs(title = "Billboard Weeks at #1 vs Spotify Danceability")
+    labs(title = "Predicted Price versus Actual Price")
 
 ```
 
 We can store the model object
 ```{r}
 
-SaveFile = "C:\\Users\\Chris.Woolery\\OneDrive - Republic Airways\\Documents\\2022\\NumberOnes_LM.RDATA"
+SaveFile = "C:\\Users\\Chris.Woolery\\OneDrive - Republic Airways\\Documents\\2024\\Airbnb_LM.RDATA"
 
-saveRDS(NumberOnes_LM, SaveFile)
+saveRDS(Airbnb_LM, SaveFile)
 
 x = readRDS(SaveFile)
 
 ```
 
-
-
 We can plot the residuals (error between predicted and actual) ourselves to see what the bias in the variance is
 
 ```{r}
 
-hist(NumberOnes_LM$residuals, breaks = 30)
+hist(Airbnb_LM$residuals, breaks = 30)
 
 ```
 
@@ -217,10 +355,7 @@ An R also has some nice default plots for most models
 
 ```{r fig.width=10}
 
-plot(NumberOnes_DF %>%
-       select(WeeksAt1, valence, danceability, spotify_track_popularity))
-
-plot(NumberOnes_LM)
+plot(Airbnb_LM)
 
 ```
 
@@ -228,28 +363,28 @@ plot(NumberOnes_LM)
 
 library(caret)
 
-set.seed(46143)
-PartIndex = createDataPartition(NumberOnes_DF$spotify_track_popularity, times = 1,
+set.seed(46268)
+PartIndex = createDataPartition(AirbnbDF_Clean$Price, times = 1,
                                  p = 0.7, list = FALSE)
 
-Popularity_DF = NumberOnes_DF %>%
+AirbnbDF_Clean = AirbnbDF_Clean %>%
   mutate(RowID = row_number(),
          SetName = as.factor(if_else(RowID %in% PartIndex, "Train", "Test"))) %>%
   dplyr::relocate(c(RowID, SetName), .before = everything()) %>%
   filter(complete.cases(.))
 
-Popularity_DF %>%
+AirbnbDF_Clean %>%
   filter(SetName == "Train") %>%
-  pull(spotify_track_popularity) %>%
+  pull(Price) %>%
   summary()
 
 ```
 
 ```{r}
 
-Popularity_DF %>%
+AirbnbDF_Clean %>%
   filter(SetName == "Test") %>%
-  pull(spotify_track_popularity) %>%
+  pull(Price) %>%
   summary()
 
 ```
@@ -257,10 +392,10 @@ Popularity_DF %>%
 
 ```{r}
 
-Popularity_DF_Train = Popularity_DF %>%
+AirbnbDF_Train = AirbnbDF_Clean %>%
   filter(SetName == "Train")
 
-Popularity_DF_Test = Popularity_DF %>%
+AirbnbDF_Test = AirbnbDF_Clean %>%
   filter(SetName == "Test")
 
 ```
@@ -270,70 +405,71 @@ Let's introduce the concept of [cross validation](https://en.wikipedia.org/wiki/
 
 ```{r}
 
-set.seed(46143)
-pop.cv.folds <- createMultiFolds(Popularity_DF_Train$spotify_track_popularity, k = 5, times = 4)
+set.seed(46268)
+price.cv.folds <- createMultiFolds(AirbnbDF_Train$Price, k = 5, times = 4)
 
-pop.cv.cntrl <- trainControl(method = "repeatedcv", number = 5,
-                         repeats = 4, index = pop.cv.folds)
+price.cv.cntrl <- trainControl(method = "repeatedcv", number = 5,
+                         repeats = 4, index = price.cv.folds)
 
-Popularity_LM <- train(spotify_track_popularity ~ mode + danceability + valence, 
-                           data = Popularity_DF_Train,
+Airbnb_LM_Small <- train(Price ~ CityCenterDistance + AmenityCount + Accommodates
+                   + HostIsSuperhost,
+                           data = AirbnbDF_Train,
                            method="lm",
-                           trControl = pop.cv.cntrl)
+                           trControl = price.cv.cntrl)
+
+summary(Airbnb_LM_Small$finalModel)
 
 ```
 
+But we want to show an example of using a full featured model
+
 ```{r}
 
-summary(Popularity_LM$finalModel)
+NonPredictiveColumns = c("RowID", "SetName", "PropertyId", "HostId", "ZipCode", 
+                         "Latitude", "Longitude", "HasAvailability",
+                         "Availability30", "Availability60", "Availability90",
+                         "Availability365", 
+                         "Neighbourhood", "RoomType")
+
+Airbnb_LM <- train(Price ~ ., 
+                           data = AirbnbDF_Train  %>%
+                                    select(-any_of(NonPredictiveColumns)),
+                           method="lm",
+                           trControl = price.cv.cntrl)
+
+summary(Airbnb_LM$finalModel)
+
 
 ```
 
-```{r}
-
-hist(Popularity_LM$finalModel$residuals, breaks = 30)
-
-```
 
 ```{r}
 
-plot(Popularity_LM$finalModel )
+#Example of what predict() returns
+x = predict(Airbnb_LM, newdata = AirbnbDF_Test)
 
-```
-
-
-```{r}
-
-x = predict(Popularity_LM$finalModel, Popularity_DF_Test)
-
-Popularity_DF_Test = Popularity_DF_Test %>%
-      mutate(Pred = predict(Popularity_LM$finalModel, Popularity_DF_Test),
-             Err = Pred - spotify_track_popularity,
-             AbsErr = abs(Err))
-
-Popularity_DF_Train = Popularity_DF_Train %>%
-      mutate(Pred = Popularity_LM$finalModel$fitted.values,
-             Err = Pred - spotify_track_popularity,
-             AbsErr = abs(Err))
-
-ResultDF = bind_rows(Popularity_DF_Test, Popularity_DF_Train)
-
-```
-
-```{r}
-
-  Popularity_DF_Test$Pred %>% summary()
+#Add predictions to training and test data
+ResultDF = bind_rows(AirbnbDF_Train %>%
+                        mutate(Pred = predict(Airbnb_LM, AirbnbDF_Train),
+                               Err = Pred - Price,
+                               AbsErr = abs(Err)), 
+                     AirbnbDF_Test  %>%
+                        mutate(Pred = predict(Airbnb_LM, AirbnbDF_Test),
+                               Err = Pred - Price,
+                               AbsErr = abs(Err))
+                     ) %>%
+  relocate(c(Pred, Err, AbsErr), .after = Price)
 
 ```
 
 
 ```{r fig.width=10}
 
-Popularity_DF_Test %>%
-  ggplot(aes(Pred, spotify_track_popularity)) +
+ResultDF %>%
+  filter(SetName == "Test") %>%
+  ggplot(aes(Pred, Price)) +
     geom_point(aes(color = AbsErr)) + 
     scale_color_gradient(low = "grey", high = "red") +
-#    scale_x_continuous(limits = c(1,100)) +
     theme_classic()
 
 ```
@@ -341,58 +477,240 @@ Popularity_DF_Test %>%
 
 ```{r}
 
-Summary_PopTest = Popularity_DF_Test %>%
+Summary_ResultDF = ResultDF %>%
   group_by(SetName) %>%
-  summarize(MAE = mean(abs(Err)),
+  summarize(MeanPred = round(mean(Pred), 3),
+            MeanPrice = round(mean(Price), 3),
+            ME = round(mean(Err), 3),
+            MAE = round(mean(AbsErr), 3),
+            MAPE = round(MAE / mean(Price), 3),
+            RMSE = round(sqrt(mean(Err^2)), 3),
+            PctErrUnder25 = sum(if_else(AbsErr / Price <= 0.25, 1, 0)) / n(),
+            .groups = "drop") 
+
+Summary_ResultDF
+
+```
+
+```{r}
+
+DisplayDF = ResultDF %>%
+  mutate(Timeframe = Availability30 / 30,
+         Category = case_when(Err > quantile(Err, 0.75) & 
+                              Timeframe > mean(Timeframe)  ~ "Underpriced - High Availability",
+                              Err > quantile(Err, 0.75) & 
+                              Timeframe <= mean(Timeframe) ~ "Underpriced - Low Availability",
+                              Err <= quantile(Err, 0.25) & 
+                              Timeframe > mean(Timeframe) ~ "Overpriced - High Availability",
+                              Err <= quantile(Err, 0.25) & 
+                              Timeframe <= mean(Timeframe) ~ "Overpriced - Low Availability",      
+                              Timeframe <= mean(Timeframe) ~ "Fair Price - Low Availability",      
+                              Timeframe > mean(Timeframe) ~  "Fair Price - High Availability",
+                              TRUE ~ "Other") %>% factor(),
+         ) 
+
+DisplayDF%>%
+  group_by(Category) %>%
+  summarize(n = n(), .groups = "drop") %>%
+  mutate(Percentage = n / sum(n)) %>%
+  ggplot(aes(reorder(Category, Percentage), Percentage)) +
+  geom_col(aes(fill = Category)) +
+  coord_flip() +
+  theme(legend.position = "none") +
+  labs(title = "Price Model vs Availability",
+       x = "", y = "")
+
+```
+
+You could view and explore some of the Underpriced properties
+```{r}
+
+DisplayDF %>%
+  filter(Err > 50) %>%
+  arrange(desc(Err)) %>%
+  View()
+
+```
+
+
+Now some publicly available data for Classification
+
+```{r}
+# Read a table where every row is an bank customer with some data and if they left the bank
+# https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset
+ 
+# We could read the file and have R auto-assign data types based on the first 1000 and clean up the column names
+# but we'll do that in advance to save time
+# No column name clean-up was needed as these were already in upper camel
+#
+
+BankChurn_ColTypes = c("nncnccnnnnnnnn")
+
+demo_BankChurn <- readr::read_csv('https://raw.githubusercontent.com/RJETAnalytics/TrainingDemo/main/demo_BankChurn.csv', col_types = BankChurn_ColTypes)
+
+# Some general data clean-up
+BankChurnDF = demo_BankChurn %>%
+  mutate(Geography = factor(Geography),
+         Gender = factor(Gender),
+         HasCrCard = as.logical(HasCrCard),
+         IsActiveMember = as.logical(IsActiveMember),
+         Result = if_else(Exited == 1, "Exited", "Retained") %>% factor()) %>%
+  select(-c(Exited, Surname, -RowNumber)) %>%
+  relocate(Result, .before = everything())
+
+```
+ 
+Explore the data
+```{r}
+
+summary(BankChurnDF)
+
+```
+Compare the Result to some of our predictor variables
+
+First Numeric Variables with box plots
+```{r fig.width=10}
+
+DisplayDF = BankChurnDF %>%
+  select(CustomerId, Result, CreditScore, Age, Tenure, Balance, NumOfProducts, EstimatedSalary) %>%
+  pivot_longer(cols = -c(CustomerId, Result), names_to = "Predictor_Name", values_to = "Predictor_Value")
+
+DisplayDF %>%
+  ggplot(aes(Result, Predictor_Value)) +
+    stat_boxplot(geom ='errorbar', size = 0.2) + 
+    geom_boxplot() +
+    facet_wrap(~Predictor_Name, ncol = 2, scales = "free") +
+    coord_flip() 
+
+```
+
+Then Factors with column plots
+```{r fig.width=10}
+
+DisplayDF = BankChurnDF %>%
+  # We'll plan on having a count for retained vs Exited
+  # and convert logical to factor to make plots
+  mutate(Retained = if_else(Result == "Retained", 1, 0),
+         Exited = if_else(Result == "Exited", 1, 0),
+         HasCrCard = factor(HasCrCard),
+         IsActiveMember = factor(IsActiveMember)) %>%
+  # Select just factors
+  select(Retained, Exited, Geography, Gender, HasCrCard, IsActiveMember) %>%
+  # Unpivot
+  pivot_longer(cols = -c(Retained, Exited), names_to = "Predictor_Name", values_to = "Predictor_Value") %>%
+  
+  group_by(Predictor_Name, Predictor_Value) %>%
+  summarise(Retained = sum(Retained),
+            Exited = sum(Exited),
             .groups = "drop") %>%
-  mutate(MAPE = MAE / mean(Popularity_DF_Test$spotify_track_popularity))
+  mutate(Exited_Rate = Exited / (Exited + Retained))
 
-Summary_PopTest  
+DisplayDF %>%
+  ggplot(aes(Predictor_Value, Exited_Rate)) +
+    geom_col() +
+    facet_wrap(~Predictor_Name, ncol = 2, scales = "free") +
+    coord_flip() 
+
+```
+
+```{r}
+
+set.seed(46268)
+PartIndex = createDataPartition(BankChurnDF$Result, times = 1,
+                                 p = 0.7, list = FALSE)
+
+BankChurnDF_Clean = BankChurnDF %>%
+  mutate(RowID = row_number(),
+         SetName = as.factor(if_else(RowID %in% PartIndex, "Train", "Test"))) %>%
+  dplyr::relocate(c(RowID, SetName), .before = everything()) %>%
+  filter(complete.cases(.))
+
+BankChurnDF_Train = filter(BankChurnDF_Clean, SetName == "Train")
+BankChurnDF_Test = filter(BankChurnDF_Clean, SetName == "Test")
+
+```
+
+Create a logistic regression model
+https://en.wikipedia.org/wiki/Logistic_regression
+
+```{r}
+
+NonPredictiveColumns_BankChurn = c("RowID", "SetName", "RowNumber", "CustomerId")
+
+BankChurn_LOG <- train(Result ~ .,
+                           data = BankChurnDF_Train %>%
+                                    select(-any_of(NonPredictiveColumns_BankChurn)),
+                           method="glm")
+
+summary(BankChurn_LOG$finalModel)
 
 ```
 ```{r}
 
-ScoobyAOV = aov(imdb ~ monster_real + monster_amount + monster_type,
-                           data = demo_ScoobyDoo %>%
-                              mutate(monster_type = factor(monster_type)))
-
-ScoobyAOV %>% summary()
-
+confusionMatrix(BankChurn_LOG)
 
 ```
 
-Flow Control if ... else
+Other Models
 
+Decision Trees
+https://en.wikipedia.org/wiki/Decision_tree_learning
 ```{r}
 
-Cheater = "Shemp"
+BankChurn_RPART <- train(Result ~ .,
+                           data = BankChurnDF_Train %>%
+                                    select(-any_of(NonPredictiveColumns_BankChurn)),
+                           method="rpart")
 
-if (Cheater == "Moe") {
-  print("Moe Cheated")
-} else {
-  if (Cheater == "Larry") {
-    print ("Larry Cheated") 
-} else {
-    print ("It was some other stoodge")
-  }
-}
+BankChurn_RPART$finalModel
+
 ```
 
-Variable assignment with case ... when
 ```{r}
 
-TestDF = tibble(Cheater = c("Larry", "Moe", "Shemp", "Curly"))
+confusionMatrix(BankChurn_RPART)
 
-TestDF = TestDF %>%
-  mutate(Note = case_when(
-    Cheater == "Moe" ~ "Moe Cheated",
-    Cheater == "Larry" ~ "Larry Cheated",
-    TRUE ~ "It was some other stoodge"
-  )
+```
+
+```{r}
+#Example of what predict() returns
+x = predict(BankChurn_LOG, newdata = BankChurnDF_Test)
+
+#Or we could just predict a single value if it was truely new data
+NewData = tibble(
+  CreditScore = 543,
+  Geography = "France",
+  Gender = "Female",
+  Age = 56,
+  Tenure = 3,
+  Balance = 42000,
+  NumOfProducts = 1,
+  HasCrCard = FALSE,
+  IsActiveMember = FALSE,
+  EstimatedSalary = 192000
 )
 
-TestDF
+predict(BankChurn_LOG, NewData)
+
+#Add predictions to training and test data
+BankChurn_ResultDF = bind_rows(BankChurnDF_Train %>%
+                                mutate(Pred = predict(BankChurn_RPART, BankChurnDF_Train)), 
+                               BankChurnDF_Test %>%
+                                mutate(Pred = predict(BankChurn_RPART, BankChurnDF_Test))) %>%
+  relocate(c(Pred), .after = Result)
 
 ```
+
+Create a confusion matrix from the TEST data
+```{r}
+
+confusionMatrix(filter(BankChurn_ResultDF, SetName == "Test")$Pred, 
+                filter(BankChurn_ResultDF, SetName == "Test")$Result)
+
+```
+
+What could you use the predictions for if you are the bank pretending that the test data is new data that you don't really know the result for yet?
+
+
 
 END
