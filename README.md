@@ -32,7 +32,7 @@ Agenda
 ___
 
 <br><br>
-<img src="https://github.com/RJETAnalytics/TrainingDemo/blob/main/RBoot_Camp_Logo.png" alt="RJET R Bood Camp" width="200" height="200">
+<img src="https://github.com/RJETAnalytics/TrainingDemo/blob/main/RBoot_Camp_Logo.png" alt="RJET R Boot Camp" width="200" height="200">
 
 **RJET R Boot Camp**
 
@@ -49,4 +49,15 @@ Training sessions by day
 
 [Day 4 - Outline](https://github.com/RJETAnalytics/TrainingDemo/blob/main/RBootCamp_4.md)
 [ : Day 4 - Output](https://htmlpreview.github.io?https://github.com/RJETAnalytics/TrainingDemo/blob/main/R-Boot-Camp-V2---DAY-4.html)
+
+___
+
+<br><br>
+<img src="https://github.com/RJETAnalytics/TrainingDemo/blob/main/Python%20Boot%20Camp%20Logo.png" alt="RJET Python Boot Camp" width="200" height="200">
+
+**RJET Python Boot Camp**
+
+Training sessions by day
+
+[Day 1 - Jupyter Notebook](https://github.com/RJETAnalytics/TrainingDemo/blob/main/Python%20Boot%20Camp%20Day%201.ipynb)
 
